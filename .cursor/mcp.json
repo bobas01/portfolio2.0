@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "code-review-graph": {
+      "command": "C:\\Python312\\Scripts\\uvx.exe",
+      "args": [
+        "code-review-graph",
+        "serve"
+      ],
+      "cwd": "C:\\wamp64\\www\\portfolio2.0",
+      "type": "stdio"
+    }
+  }
+}
