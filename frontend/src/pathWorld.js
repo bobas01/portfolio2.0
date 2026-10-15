@@ -112,21 +112,26 @@ function paintNoise(width, height, base, specks) {
 
 function paintSign(label) {
   const canvas = document.createElement("canvas");
-  canvas.width = 160;
-  canvas.height = 48;
+  canvas.width = 320;
+  canvas.height = 96;
   const pen = canvas.getContext("2d");
   pen.fillStyle = "#e7d3a8";
-  pen.fillRect(0, 0, 160, 48);
+  pen.fillRect(0, 0, 320, 96);
   pen.fillStyle = "#5c3b22";
-  pen.fillRect(0, 0, 160, 4);
-  pen.fillRect(0, 44, 160, 4);
-  pen.fillRect(0, 0, 4, 48);
-  pen.fillRect(156, 0, 4, 48);
+  pen.fillRect(0, 0, 320, 8);
+  pen.fillRect(0, 88, 320, 8);
+  pen.fillRect(0, 0, 8, 96);
+  pen.fillRect(312, 0, 8, 96);
   pen.fillStyle = "#1a2a14";
-  pen.font = "700 22px sans-serif";
   pen.textAlign = "center";
   pen.textBaseline = "middle";
-  pen.fillText(label, 80, 25);
+  let size = 44;
+  pen.font = `700 ${size}px sans-serif`;
+  while (size > 22 && pen.measureText(label).width > 280) {
+    size -= 2;
+    pen.font = `700 ${size}px sans-serif`;
+  }
+  pen.fillText(label, 160, 50);
   return canvas;
 }
 
@@ -253,35 +258,45 @@ export async function createPathWorld(canvas) {
   }
 
   const postMaterial = new THREE.MeshBasicMaterial({ color: "#6b4428" });
-  const signGroups = stops.map((stop) => {
+  const signGroups = [];
+  const signBoards = [];
+  stops.forEach((stop) => {
     const group = new THREE.Group();
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.92, 0.08), postMaterial);
     post.position.y = 0.46;
     const board = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.35, 0.46),
+      new THREE.PlaneGeometry(1.7, 0.58),
       new THREE.MeshBasicMaterial({ color: "#e7d3a8" }),
     );
-    board.position.y = 1.12;
+    board.position.y = 1.2;
     group.add(post, board);
     group.position.set(toPathX(stop.x), 0.12, 0);
     scene.add(group);
-    return board;
+    signGroups.push(group);
+    signBoards.push(board);
   });
 
   const panda = buildPanda();
   scene.add(panda.actor);
 
+  let portrait = false;
+
   function resize(width, height) {
     const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
     renderer.setPixelRatio(ratio);
     renderer.setSize(width, height, false);
-    camera.aspect = width / Math.max(height, 1);
+    const aspect = width / Math.max(height, 1);
+    portrait = width < 760 || aspect < 0.9;
+    camera.aspect = aspect;
+    camera.fov = portrait ? 30 : 28;
     camera.updateProjectionMatrix();
+    const scale = portrait ? 1.35 : 1;
+    signGroups.forEach((group) => group.scale.setScalar(scale));
   }
 
   function setLabels(labels) {
     labels.forEach((label, index) => {
-      const board = signGroups[index];
+      const board = signBoards[index];
       if (!board) return;
       board.material.map?.dispose();
       board.material.map = pixelTexture(paintSign(label));
@@ -298,8 +313,13 @@ export async function createPathWorld(canvas) {
     panda.rightLeg.rotation.x = -step * 0.7;
     panda.leftArm.rotation.x = -step * 0.5;
     panda.rightArm.rotation.x = step * 0.5;
-    camera.position.set(x + 0.35, 4.05, 9.1);
-    camera.lookAt(x + 1.7, 0.85, 0);
+    if (portrait) {
+      camera.position.set(x - 0.15, 2.2, 4.4);
+      camera.lookAt(x + 1.15, 1.05, 0);
+    } else {
+      camera.position.set(x + 0.35, 4.05, 9.1);
+      camera.lookAt(x + 1.7, 0.85, 0);
+    }
   }
 
   function render() {

@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { textFor } from "../copy.js";
 import { createPathWorld } from "../pathWorld.js";
-import { STOP_IDS, stops } from "../walk.js";
+import { stops } from "../walk.js";
 
 const props = defineProps({
   walk: { type: Object, required: true },
@@ -44,9 +44,18 @@ function letGo(dir) {
 }
 
 function trap(event) {
-  if (props.walk.mode !== "sign" || event.key !== "Tab") return;
-  const buttons = event.currentTarget.querySelectorAll("button");
+  if (props.walk.mode !== "sign") return;
+  const buttons = [...event.currentTarget.querySelectorAll("button")];
   if (buttons.length < 2) return;
+  const index = buttons.indexOf(document.activeElement);
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    const step = event.key === "ArrowDown" ? 1 : -1;
+    const next = buttons[Math.min(buttons.length - 1, Math.max(0, index + step))];
+    next?.focus();
+    return;
+  }
+  if (event.key !== "Tab") return;
   const first = buttons[0];
   const last = buttons[buttons.length - 1];
   if (event.shiftKey && document.activeElement === first) {
@@ -56,6 +65,14 @@ function trap(event) {
     event.preventDefault();
     first.focus();
   }
+}
+
+function onScenePointer(event) {
+  if (props.walk.mode === "sign" && !event.target?.closest?.(".sign-card")) {
+    emit("resume");
+    return;
+  }
+  focusPath(event);
 }
 
 watch(
@@ -110,7 +127,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="root" class="path" tabindex="-1" @pointerdown="focusPath">
+  <div ref="root" class="path" tabindex="-1" @pointerdown="onScenePointer">
     <canvas ref="view" aria-hidden="true"></canvas>
 
     <div class="drift" aria-hidden="true">
@@ -145,18 +162,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div v-if="reduced" class="stops panel">
-      <button
-        v-for="id in STOP_IDS"
-        :key="id"
-        type="button"
-        @click="emit('open', id)"
-      >
-        {{ textFor(localeId, id) }}
-      </button>
-    </div>
-
-    <div v-else-if="walk.mode === 'walk'" class="pad">
+    <div v-if="!reduced && walk.mode === 'walk'" class="pad">
       <button
         type="button"
         :aria-label="textFor(localeId, 'walkLeft')"

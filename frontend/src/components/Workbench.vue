@@ -17,6 +17,8 @@ const shown = ref(0);
 const turn = ref(null);
 const shotIndex = ref({});
 let turnToken = 0;
+let swipeX = 0;
+let tracking = false;
 
 const activeId = computed(() => hovered.value || projects[selected.value]?.id || "");
 const page = computed(() => projects[shown.value]);
@@ -38,6 +40,7 @@ function leave() {
 }
 
 async function openProject(position) {
+  if (!Number.isInteger(position) || position < 0 || position >= projects.length) return;
   hovered.value = "";
   if (turn.value && turn.value.to !== position) {
     shown.value = turn.value.to;
@@ -51,8 +54,9 @@ async function openProject(position) {
     return;
   }
   selected.value = position;
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduce) {
+  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+  const narrow = window.matchMedia?.("(max-width: 860px)")?.matches ?? false;
+  if (reduce || narrow) {
     shown.value = position;
     return;
   }
@@ -68,6 +72,20 @@ function finishTurn(event) {
   if (!turn.value || event.target !== event.currentTarget) return;
   shown.value = turn.value.to;
   turn.value = null;
+}
+
+function swipeStart(event) {
+  if (event.target.closest("button, a, select")) return;
+  tracking = true;
+  swipeX = event.clientX;
+}
+
+function swipeEnd(event) {
+  if (!tracking) return;
+  tracking = false;
+  const delta = event.clientX - swipeX;
+  if (Math.abs(delta) < 48) return;
+  openProject(shown.value + (delta < 0 ? 1 : -1));
 }
 
 function stepShot(project, delta) {
@@ -104,7 +122,7 @@ function stepShot(project, delta) {
 
         <div class="manual">
           <div class="spread">
-            <div class="leaf">
+            <div class="leaf" @pointerdown="swipeStart" @pointerup="swipeEnd" @pointercancel="swipeEnd">
               <svg class="sprig" viewBox="0 0 120 240" aria-hidden="true">
                 <path d="M36 2c4 36-8 58 2 96 10 36-6 58 4 92 6 22 0 32 6 46" fill="none" stroke="#2f6b40" stroke-width="2.4" stroke-linecap="round"/>
                 <path d="M36 28c22-18 42-8 38 8-16 4-28 8-38 18 4-10 4-18 0-26z" fill="#3f8f52"/>
@@ -166,6 +184,14 @@ function stepShot(project, delta) {
                 {{ project.name }}
               </button>
             </nav>
+            <label class="picker">
+              {{ t("travaux") }}
+              <select :value="selected" @change="openProject(Number($event.target.value))">
+                <option v-for="(project, position) in projects" :key="project.id" :value="position">
+                  {{ project.name }}
+                </option>
+              </select>
+            </label>
           </div>
         </div>
     </div>
@@ -238,7 +264,7 @@ function stepShot(project, delta) {
   flex-direction: column;
   align-items: center;
   gap: 0.6rem;
-  padding: 0 1rem 1.5rem;
+  padding: 0 1rem 5rem;
 }
 
 .hud {
@@ -423,6 +449,10 @@ function stepShot(project, delta) {
   line-height: 1.3;
 }
 
+.picker {
+  display: none;
+}
+
 .index {
   display: flex;
   flex-direction: column;
@@ -474,6 +504,29 @@ function stepShot(project, delta) {
 }
 
 @media (max-width: 860px) {
+  .picker {
+    display: grid;
+    gap: 0.35rem;
+    width: min(46rem, 92vw);
+    color: #f4ecda;
+    font-family: "Josefin Slab", serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .picker select {
+    min-height: 2.8rem;
+    padding: 0.35rem 0.6rem;
+    border: 3px solid #3a2414;
+    background: #f4ecda;
+    color: #1a1208;
+    font: inherit;
+  }
+
+  .index {
+    display: none;
+  }
+
   .hud {
     grid-template-columns: repeat(5, 3.15rem);
   }

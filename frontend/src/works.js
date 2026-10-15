@@ -1,25 +1,32 @@
 export const skills = [
-  { id: "html", name: "HTML", logo: "/tools/html.svg", led: "#e44d26" },
-  { id: "css", name: "CSS", logo: "/tools/css.svg", led: "#264de4" },
-  { id: "scss", name: "SCSS", logo: "/tools/scss.svg", led: "#cd6799" },
-  { id: "javascript", name: "JavaScript", logo: "/tools/javascript.svg", led: "#f0db4f" },
-  { id: "php", name: "PHP", logo: "/tools/php.svg", led: "#8892bf" },
-  { id: "mysql", name: "MySQL", logo: "/tools/mysql.svg", led: "#00758f" },
-  { id: "vue", name: "Vue.js", logo: "/tools/vue.svg", led: "#42b883" },
-  { id: "svelte", name: "Svelte", logo: "/tools/svelte.svg", led: "#ff3e00" },
-  { id: "symfony", name: "Symfony", logo: "/tools/symfony.svg", led: "#b6ff4a" },
-  { id: "api-platform", name: "API Platform", logo: "/tools/api-platform.svg", led: "#38b2ac" },
-  { id: "docker", name: "Docker", logo: "/tools/docker.svg", led: "#2496ed" },
-  { id: "figma", name: "Figma", logo: "/tools/figma.svg", led: "#f24e1e" },
-  { id: "git", name: "Git", logo: "/tools/git.svg", led: "#f05033" },
-  { id: "github", name: "GitHub", logo: "/tools/github.svg", led: "#b6ff4a" },
-  { id: "jira", name: "Jira", logo: "/tools/jira.svg", led: "#2684ff" },
-  { id: "agile", name: "Agile", logo: "/tools/agile.svg", led: "#4f9cf9" },
-  { id: "aws", name: "AWS", logo: "/tools/aws.svg", led: "#ff9900" },
-  { id: "s3", name: "S3", logo: "/tools/s3.svg", led: "#e25444" },
-  { id: "stripe", name: "Stripe", logo: "/tools/stripe.svg", led: "#635bff" },
-  { id: "smtp", name: "SMTP", logo: "/tools/smtp.svg", led: "#8ec5ff" },
+  { id: "html", name: "HTML", logo: "/tools/html.svg", led: "#e44d26", category: "dev" },
+  { id: "css", name: "CSS", logo: "/tools/css.svg", led: "#264de4", category: "dev" },
+  { id: "scss", name: "SCSS", logo: "/tools/scss.svg", led: "#cd6799", category: "dev" },
+  { id: "javascript", name: "JavaScript", logo: "/tools/javascript.svg", led: "#f0db4f", category: "dev" },
+  { id: "php", name: "PHP", logo: "/tools/php.svg", led: "#8892bf", category: "dev" },
+  { id: "mysql", name: "MySQL", logo: "/tools/mysql.svg", led: "#00758f", category: "dev" },
+  { id: "vue", name: "Vue.js", logo: "/tools/vue.svg", led: "#42b883", category: "dev" },
+  { id: "svelte", name: "Svelte", logo: "/tools/svelte.svg", led: "#ff3e00", category: "dev" },
+  { id: "symfony", name: "Symfony", logo: "/tools/symfony.svg", led: "#b6ff4a", category: "dev" },
+  { id: "api-platform", name: "API Platform", logo: "/tools/api-platform.svg", led: "#38b2ac", category: "dev" },
+  { id: "docker", name: "Docker", logo: "/tools/docker.svg", led: "#2496ed", category: "tools" },
+  { id: "figma", name: "Figma", logo: "/tools/figma.svg", led: "#f24e1e", category: "tools" },
+  { id: "git", name: "Git", logo: "/tools/git.svg", led: "#f05033", category: "tools" },
+  { id: "github", name: "GitHub", logo: "/tools/github.svg", led: "#b6ff4a", category: "tools" },
+  { id: "jira", name: "Jira", logo: "/tools/jira.svg", led: "#2684ff", category: "tools" },
+  { id: "agile", name: "Agile", logo: "/tools/agile.svg", led: "#4f9cf9", category: "tools" },
+  { id: "aws", name: "AWS", logo: "/tools/aws.svg", led: "#ff9900", category: "cloud" },
+  { id: "s3", name: "S3", logo: "/tools/s3.svg", led: "#e25444", category: "cloud" },
+  { id: "stripe", name: "Stripe", logo: "/tools/stripe.svg", led: "#635bff", category: "cloud" },
+  { id: "smtp", name: "SMTP", logo: "/tools/smtp.svg", led: "#8ec5ff", category: "cloud" },
 ];
+
+export const skillCategories = ["dev", "tools", "cloud"];
+
+export function skillsIn(category) {
+  if (!skillCategories.includes(category)) return [];
+  return skills.filter((skill) => skill.category === category);
+}
 
 const practiceIds = new Set(["figma", "git", "github", "jira", "agile", "smtp"]);
 

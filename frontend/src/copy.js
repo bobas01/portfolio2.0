@@ -29,6 +29,15 @@ const messages = {
     cv: "CV français",
     grove: "Clairière",
     toolsLabel: "Outils",
+    groupDev: "Développement",
+    groupTools: "Outils et méthodes",
+    groupCloud: "Cloud et services",
+    jump: "Aller à",
+    formName: "Nom",
+    formEmail: "E-mail",
+    formMessage: "Message",
+    formSend: "Envoyer",
+    formHint: "Le message s’ouvre dans ta messagerie.",
     others: "Les autres projets",
     openSite: "Voir le site",
     prev: "Projet précédent",
@@ -58,6 +67,15 @@ const messages = {
     cv: "English CV",
     grove: "Clearing",
     toolsLabel: "Tools",
+    groupDev: "Development",
+    groupTools: "Tools and methods",
+    groupCloud: "Cloud and services",
+    jump: "Go to",
+    formName: "Name",
+    formEmail: "Email",
+    formMessage: "Message",
+    formSend: "Send",
+    formHint: "The message opens in your mail app.",
     others: "Other projects",
     openSite: "Open the site",
     prev: "Previous project",
@@ -87,6 +105,15 @@ const messages = {
     cv: "CV em português",
     grove: "Clareira",
     toolsLabel: "Ferramentas",
+    groupDev: "Desenvolvimento",
+    groupTools: "Ferramentas e métodos",
+    groupCloud: "Nuvem e serviços",
+    jump: "Ir para",
+    formName: "Nome",
+    formEmail: "E-mail",
+    formMessage: "Mensagem",
+    formSend: "Enviar",
+    formHint: "A mensagem abre no seu aplicativo de e-mail.",
     others: "Os outros projetos",
     openSite: "Ver o site",
     prev: "Projeto anterior",
@@ -106,6 +133,23 @@ export const contact = {
   phone: "+55 62 99152-5466",
   place: "Niterói, Rio de Janeiro",
 };
+
+function cleanField(value, max) {
+  return String(value ?? "")
+    .replace(/[\u0000-\u001f]/g, " ")
+    .trim()
+    .slice(0, max);
+}
+
+export function letterHref(email, fields) {
+  const name = cleanField(fields?.name, 80);
+  const from = cleanField(fields?.email, 120);
+  const message = cleanField(fields?.message, 2000);
+  if (!name || !from || !message) return "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(from)) return "";
+  const body = `${name} <${from}>\n\n${message}`;
+  return `mailto:${email}?subject=${encodeURIComponent("Portfolio")}&body=${encodeURIComponent(body)}`;
+}
 
 export function findLocale(id) {
   return locales.find((locale) => locale.id === id) ?? locales[0];

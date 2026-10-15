@@ -28,6 +28,10 @@ describe("PathScene", () => {
     expect(real.emitted("enter")).toHaveLength(1);
     await real.get("[role=dialog]").findAll("button")[1].trigger("click");
     expect(real.emitted("resume")).toHaveLength(1);
+
+    await real.get("[role=dialog]").trigger("keydown", { key: "ArrowDown" });
+    await real.get(".path").trigger("pointerdown");
+    expect(real.emitted("resume").length).toBeGreaterThan(1);
   });
 
   it("transmet la direction du bouton", async () => {

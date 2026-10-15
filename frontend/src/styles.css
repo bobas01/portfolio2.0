@@ -393,6 +393,9 @@ body {
 }
 
 .who-name {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   margin: 0;
   padding: 0.2rem 0.7rem;
   color: #d7f0c4;
@@ -401,6 +404,14 @@ body {
   outline: 2px solid #8fd18a;
   outline-offset: -5px;
   font-size: 1rem;
+}
+
+.mark {
+  width: 2.15rem;
+  height: 2.6rem;
+  object-fit: contain;
+  background: #f7f3ea;
+  border: 2px solid #8fd18a;
 }
 
 .hint,
@@ -452,6 +463,11 @@ body {
 .hint button,
 .sign-actions {
   margin-top: 0.8rem;
+}
+
+.sign-actions button:first-child {
+  background: #1d6b32;
+  border-color: #8fd18a;
 }
 
 .sign-actions,
@@ -514,6 +530,100 @@ body {
   outline: 2px solid #8fd18a;
 }
 
+.kit h2 {
+  margin: 1.15rem 0 0;
+  color: #d7f0c4;
+  font-family: "Josefin Slab", serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.letter {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.letter label {
+  display: grid;
+  gap: 0.25rem;
+  color: #d7f0c4;
+  font-family: "Josefin Slab", serif;
+  font-weight: 700;
+}
+
+.letter input,
+.letter textarea {
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 2px solid #1d4a32;
+  background: #10281c;
+  color: #f4ffe8;
+  font: inherit;
+}
+
+.letter button {
+  min-height: 2.75rem;
+  border: 2px solid #8fd18a;
+  background: #1d6b32;
+  color: #f4ffe8;
+  font-family: "Josefin Slab", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.letter p {
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.frise {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: 5.4rem;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.frise-toggle {
+  display: none;
+}
+
+.frise-list,
+.frise button {
+  pointer-events: auto;
+}
+
+.frise-list {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.frise button {
+  min-height: 2.4rem;
+  padding: 0.15rem 0.65rem;
+  border: 2px solid #1d4a32;
+  background: #0b1c14;
+  color: #d7f0c4;
+  font-family: "Josefin Slab", serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.frise button:hover,
+.frise button:focus-visible {
+  color: #f4ffe8;
+  border-color: #8fd18a;
+}
+
 .kit ul {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
@@ -537,6 +647,49 @@ body {
   width: 1.8rem;
   height: 1.8rem;
   object-fit: contain;
+}
+
+@media (max-width: 720px) {
+  .about {
+    grid-template-columns: 1fr;
+  }
+
+  .portrait {
+    width: 6.5rem;
+    height: 8rem;
+  }
+
+  .top-bar {
+    gap: 0.4rem;
+  }
+
+  .who-name {
+    font-size: 0.85rem;
+  }
+
+  .pad button {
+    width: 3.4rem;
+    height: 3.4rem;
+  }
+
+  .page {
+    max-height: calc(100dvh - 8.5rem);
+  }
+
+  .frise-toggle {
+    display: inline-flex;
+  }
+
+  .frise-list {
+    display: none;
+  }
+
+  .frise.is-open .frise-list {
+    position: absolute;
+    bottom: calc(100% + 0.4rem);
+    display: grid;
+    min-width: 11rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
