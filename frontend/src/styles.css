@@ -399,7 +399,7 @@ body {
 
 .sign {
   position: absolute;
-  top: calc((846 - 118) / 880 * 100%);
+  bottom: 11%;
   z-index: 1;
   display: flex;
   flex-direction: column;
@@ -431,8 +431,8 @@ body {
 .panda {
   position: absolute;
   z-index: 2;
-  top: calc((846 - 150) / 880 * 100%);
-  width: calc(113 / 1920 * 100%);
+  bottom: 9%;
+  height: 22%;
   aspect-ratio: 113 / 150;
   background-repeat: no-repeat;
   background-size: 200% 100%;

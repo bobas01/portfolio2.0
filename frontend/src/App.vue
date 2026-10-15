@@ -28,7 +28,7 @@ function onResume() {
 
 <template>
   <main class="clairiere" :class="{ 'is-bench': view === 'bench' }">
-    <div v-show="view === 'grove'" class="stage">
+    <template v-if="view === 'grove'">
       <PathScene
         :walk="walk"
         :locale-id="localeId"
@@ -49,7 +49,7 @@ function onResume() {
           @choose="chooseLocale"
         />
       </div>
-    </div>
+    </template>
 
     <Workbench
       v-else-if="view === 'bench'"
