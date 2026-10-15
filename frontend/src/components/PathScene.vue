@@ -63,12 +63,17 @@ watch(
   () => world?.setLabels(labels()),
 );
 
+function focusPath(event) {
+  if (event?.target instanceof Element && event.target.closest("button")) return;
+  root.value?.focus({ preventScroll: true });
+}
+
 watch(
   () => props.walk.mode,
   async (mode) => {
-    if (mode !== "sign") return;
     await nextTick();
-    enterButton.value?.focus();
+    if (mode === "sign") enterButton.value?.focus();
+    else if (mode === "walk") focusPath();
   },
 );
 
@@ -92,6 +97,7 @@ onMounted(() => {
     })
     .catch(() => {});
   window.addEventListener("resize", onResize);
+  focusPath();
 });
 
 onBeforeUnmount(() => {
@@ -104,7 +110,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="root" class="path">
+  <div ref="root" class="path" tabindex="-1" @pointerdown="focusPath">
     <canvas ref="view" aria-hidden="true"></canvas>
 
     <div class="drift" aria-hidden="true">

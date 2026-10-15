@@ -166,8 +166,8 @@ function buildPanda() {
   box(torso, [0.3, 0.24, 0.12], [0.22, 1.2, 0.42], black);
   box(torso, [0.12, 0.12, 0.06], [-0.22, 1.22, 0.5], white);
   box(torso, [0.12, 0.12, 0.06], [0.22, 1.22, 0.5], white);
-  box(torso, [0.06, 0.07, 0.04], [-0.2, 1.21, 0.54], ink);
-  box(torso, [0.06, 0.07, 0.04], [0.24, 1.21, 0.54], ink);
+  box(torso, [0.06, 0.07, 0.04], [-0.22, 1.21, 0.54], ink);
+  box(torso, [0.06, 0.07, 0.04], [0.22, 1.21, 0.54], ink);
   box(torso, [0.16, 0.1, 0.1], [0, 0.98, 0.46], ink);
 
   const shoulder = 0.72;
@@ -292,7 +292,7 @@ export async function createPathWorld(canvas) {
   function sync(walk) {
     const x = toPathX(walk.x);
     panda.actor.position.x = x;
-    panda.actor.rotation.y = walk.facing === -1 ? 0.65 : -0.65;
+    panda.actor.rotation.y = walk.facing * 1.1;
     const step = walk.mode === "walk" ? Math.sin(walk.x / 9) : 0;
     panda.leftLeg.rotation.x = step * 0.7;
     panda.rightLeg.rotation.x = -step * 0.7;

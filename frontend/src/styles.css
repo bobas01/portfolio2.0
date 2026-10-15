@@ -380,6 +380,10 @@ body {
   overflow: hidden;
 }
 
+.path:focus {
+  outline: none;
+}
+
 .path canvas {
   position: absolute;
   inset: 0;

@@ -8,6 +8,14 @@ import {
   writeHintDismissed,
 } from "./walk.js";
 
+export function keyDirection(event) {
+  const key = event.key || "";
+  const code = event.code || "";
+  if (key === "ArrowLeft" || key === "Left" || code === "ArrowLeft") return -1;
+  if (key === "ArrowRight" || key === "Right" || code === "ArrowRight") return 1;
+  return 0;
+}
+
 export function useJourney() {
   const walk = ref(createWalk());
   const reduced = ref(false);
@@ -77,30 +85,37 @@ export function useJourney() {
       resume();
       return;
     }
-    if (walk.value.mode !== "walk" || reduced.value) return;
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    const dir = keyDirection(event);
+    if (!dir || walk.value.mode !== "walk" || reduced.value) return;
     event.preventDefault();
     if (event.repeat) return;
-    press(event.key === "ArrowLeft" ? -1 : 1);
+    press(dir);
   }
 
   function onKeyUp(event) {
-    if (event.key === "ArrowLeft") release(-1);
-    if (event.key === "ArrowRight") release(1);
+    const dir = keyDirection(event);
+    if (dir) release(dir);
+  }
+
+  function releaseKeys() {
+    left = false;
+    right = false;
   }
 
   onMounted(() => {
     reduced.value = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
     if (readHintDismissed()) walk.value = { ...walk.value, hint: false };
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener("keyup", onKeyUp, true);
+    window.addEventListener("blur", releaseKeys);
     frame = window.requestAnimationFrame(tick);
   });
 
   onBeforeUnmount(() => {
     window.cancelAnimationFrame(frame);
-    window.removeEventListener("keydown", onKeyDown);
-    window.removeEventListener("keyup", onKeyUp);
+    window.removeEventListener("keydown", onKeyDown, true);
+    window.removeEventListener("keyup", onKeyUp, true);
+    window.removeEventListener("blur", releaseKeys);
   });
 
   return { walk, reduced, press, release, enter, resume, open, dismiss };

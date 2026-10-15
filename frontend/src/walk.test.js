@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { keyDirection } from "./useJourney.js";
 import { createWalk, reduceWalk, stops, WORLD } from "./walk.js";
 
 function travel(state, dir, distance) {
@@ -74,5 +75,14 @@ describe("reduceWalk", () => {
   it("borne un pas aberrant", () => {
     const next = travel(createWalk(), 1, 10_000);
     expect(next.x - WORLD.minX).toBeLessThanOrEqual(WORLD.maxStep);
+  });
+});
+
+describe("keyDirection", () => {
+  it("reconnaît les flèches gauche et droite", () => {
+    expect(keyDirection({ key: "ArrowLeft" })).toBe(-1);
+    expect(keyDirection({ key: "ArrowRight" })).toBe(1);
+    expect(keyDirection({ key: "", code: "ArrowLeft" })).toBe(-1);
+    expect(keyDirection({ key: "Enter", code: "Enter" })).toBe(0);
   });
 });
