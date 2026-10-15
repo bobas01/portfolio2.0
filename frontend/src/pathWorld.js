@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import pandaUrl from "../../assets/plates/panda.png";
 import { WORLD, stops } from "./walk.js";
 
 const SKY = "#9ed4f2";
@@ -51,51 +50,6 @@ export function fillSpriteHoles(pixels, width, height) {
     }
   }
   return pixels;
-}
-
-function closeBites(pixels, width, height) {
-  const copy = new Uint8ClampedArray(pixels);
-  for (let y = 1; y < height - 1; y += 1) {
-    for (let x = 1; x < width - 1; x += 1) {
-      const index = (y * width + x) * 4;
-      if (pixels[index + 3] > 24) continue;
-      let count = 0;
-      let red = 0;
-      let green = 0;
-      let blue = 0;
-      for (let dy = -1; dy <= 1; dy += 1) {
-        for (let dx = -1; dx <= 1; dx += 1) {
-          const near = ((y + dy) * width + (x + dx)) * 4;
-          if (pixels[near + 3] <= 24) continue;
-          count += 1;
-          red += pixels[near];
-          green += pixels[near + 1];
-          blue += pixels[near + 2];
-        }
-      }
-      if (count < 4) continue;
-      copy[index] = Math.round(red / count);
-      copy[index + 1] = Math.round(green / count);
-      copy[index + 2] = Math.round(blue / count);
-      copy[index + 3] = 255;
-    }
-  }
-  pixels.set(copy);
-}
-
-function stripGreen(pixels, width, height) {
-  for (let index = 0; index < width * height; index += 1) {
-    const offset = index * 4;
-    const red = pixels[offset];
-    const green = pixels[offset + 1];
-    const blue = pixels[offset + 2];
-    if (pixels[offset + 3] > 24 && green > red + 8 && green > blue + 4 && red < 150) {
-      pixels[offset] = 12;
-      pixels[offset + 1] = 14;
-      pixels[offset + 2] = 13;
-      pixels[offset + 3] = 255;
-    }
-  }
 }
 
 function nearestOpaque(pixels, width, height, x, y) {
@@ -176,36 +130,66 @@ function paintSign(label) {
   return canvas;
 }
 
-function paintPanda(image) {
-  const frameWidth = image.width / 2;
-  const height = image.height;
-  return [0, 1].map((frame) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = frameWidth;
-    canvas.height = height;
-    const pen = canvas.getContext("2d");
-    pen.drawImage(image, frame * frameWidth, 0, frameWidth, height, 0, 0, frameWidth, height);
-    const imageData = pen.getImageData(0, 0, frameWidth, height);
-    fillSpriteHoles(imageData.data, frameWidth, height);
-    closeBites(imageData.data, frameWidth, height);
-    closeBites(imageData.data, frameWidth, height);
-    stripGreen(imageData.data, frameWidth, height);
-    pen.putImageData(imageData, 0, 0);
-    return pixelTexture(canvas);
-  });
-}
+function buildPanda() {
+  const black = new THREE.MeshLambertMaterial({ color: "#1a1a1a" });
+  const white = new THREE.MeshLambertMaterial({ color: "#f4f1e6" });
+  const cream = new THREE.MeshLambertMaterial({ color: "#f3e6c4" });
+  const ink = new THREE.MeshLambertMaterial({ color: "#111111" });
+  const actor = new THREE.Group();
+  const leftLeg = new THREE.Group();
+  const rightLeg = new THREE.Group();
+  const torso = new THREE.Group();
+  const leftArm = new THREE.Group();
+  const rightArm = new THREE.Group();
+  const hip = 0.58;
 
-function loadPanda() {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("panda"));
-    image.src = pandaUrl;
-  });
+  function box(parent, size, position, material) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), material);
+    mesh.position.set(position[0], position[1], position[2]);
+    parent.add(mesh);
+  }
+
+  leftLeg.position.set(-0.24, hip, 0);
+  rightLeg.position.set(0.24, hip, 0);
+  box(leftLeg, [0.34, 0.4, 0.36], [0, -0.2, 0], black);
+  box(rightLeg, [0.34, 0.4, 0.36], [0, -0.2, 0], black);
+  box(leftLeg, [0.38, 0.14, 0.42], [0, -0.38, 0.06], black);
+  box(rightLeg, [0.38, 0.14, 0.42], [0, -0.38, 0.06], black);
+
+  torso.position.y = hip;
+  box(torso, [1.02, 0.82, 0.7], [0, 0.4, 0], black);
+  box(torso, [0.62, 0.5, 0.18], [0, 0.32, 0.36], cream);
+  box(torso, [0.92, 0.78, 0.8], [0, 1.16, 0.04], white);
+  box(torso, [0.26, 0.26, 0.2], [-0.36, 1.62, 0], black);
+  box(torso, [0.26, 0.26, 0.2], [0.36, 1.62, 0], black);
+  box(torso, [0.3, 0.24, 0.12], [-0.22, 1.2, 0.42], black);
+  box(torso, [0.3, 0.24, 0.12], [0.22, 1.2, 0.42], black);
+  box(torso, [0.12, 0.12, 0.06], [-0.22, 1.22, 0.5], white);
+  box(torso, [0.12, 0.12, 0.06], [0.22, 1.22, 0.5], white);
+  box(torso, [0.06, 0.07, 0.04], [-0.2, 1.21, 0.54], ink);
+  box(torso, [0.06, 0.07, 0.04], [0.24, 1.21, 0.54], ink);
+  box(torso, [0.16, 0.1, 0.1], [0, 0.98, 0.46], ink);
+
+  const shoulder = 0.72;
+  leftArm.position.set(-0.62, shoulder, 0);
+  rightArm.position.set(0.62, shoulder, 0);
+  box(leftArm, [0.26, 0.52, 0.26], [0, -0.26, 0], black);
+  box(rightArm, [0.26, 0.52, 0.26], [0, -0.26, 0], black);
+  torso.add(leftArm, rightArm);
+  actor.add(leftLeg, rightLeg, torso);
+
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(0.62, 12),
+    new THREE.MeshBasicMaterial({ color: "#6d5a3c" }),
+  );
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.set(0, 0.13, 0);
+  actor.add(shadow);
+
+  return { actor, leftLeg, rightLeg, leftArm, rightArm };
 }
 
 export async function createPathWorld(canvas) {
-  const panda = await loadPanda();
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.setClearColor(SKY);
@@ -215,7 +199,10 @@ export async function createPathWorld(canvas) {
   scene.fog = new THREE.Fog(SKY, 9, 24);
 
   const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
-  const [stand, step] = paintPanda(panda);
+  scene.add(new THREE.AmbientLight("#fff6ea", 0.72));
+  const sun = new THREE.DirectionalLight("#fff8ee", 0.9);
+  sun.position.set(-6, 9, 7);
+  scene.add(sun);
 
   const sand = pixelTexture(
     paintNoise(32, 32, "#efe4cc", ["#e4d5b4", "#f7f0e0", "#d9cbae"]),
@@ -281,26 +268,8 @@ export async function createPathWorld(canvas) {
     return board;
   });
 
-  const frames = [stand, step].map(
-    (map) =>
-      new THREE.MeshBasicMaterial({
-        map,
-        transparent: true,
-        alphaTest: 0.45,
-        side: THREE.DoubleSide,
-      }),
-  );
-  const actor = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.PlaneGeometry(0.86, 1.14), frames[0]);
-  body.position.y = 0.69;
-  const shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(0.34, 10),
-    new THREE.MeshBasicMaterial({ color: "#6d5a3c" }),
-  );
-  shadow.rotation.x = -Math.PI / 2;
-  shadow.position.set(0, 0.125, 0);
-  actor.add(shadow, body);
-  scene.add(actor);
+  const panda = buildPanda();
+  scene.add(panda.actor);
 
   function resize(width, height) {
     const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -322,13 +291,15 @@ export async function createPathWorld(canvas) {
 
   function sync(walk) {
     const x = toPathX(walk.x);
-    actor.position.x = x;
-    actor.scale.x = walk.facing === -1 ? -1 : 1;
-    const stepping = Math.floor(walk.x / 12) % 2 === 1 && walk.mode === "walk";
-    body.material = frames[stepping ? 1 : 0];
-    body.position.y = stepping ? 0.74 : 0.69;
-    camera.position.set(x + 0.2, 3.15, 7.4);
-    camera.lookAt(x + 1.6, 0.45, 0);
+    panda.actor.position.x = x;
+    panda.actor.rotation.y = walk.facing === -1 ? 0.65 : -0.65;
+    const step = walk.mode === "walk" ? Math.sin(walk.x / 9) : 0;
+    panda.leftLeg.rotation.x = step * 0.7;
+    panda.rightLeg.rotation.x = -step * 0.7;
+    panda.leftArm.rotation.x = -step * 0.5;
+    panda.rightArm.rotation.x = step * 0.5;
+    camera.position.set(x + 0.35, 4.05, 9.1);
+    camera.lookAt(x + 1.7, 0.85, 0);
   }
 
   function render() {
