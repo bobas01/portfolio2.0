@@ -1,9 +1,8 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import grove from "../../../assets/plates/grove.png";
-import panda from "../../../assets/plates/panda.png";
 import { textFor } from "../copy.js";
-import { STOP_IDS, WORLD, stops } from "../walk.js";
+import { createPathWorld } from "../pathWorld.js";
+import { STOP_IDS, stops } from "../walk.js";
 
 const props = defineProps({
   walk: { type: Object, required: true },
@@ -13,27 +12,26 @@ const props = defineProps({
 const emit = defineEmits(["press", "release", "enter", "resume", "open", "dismiss"]);
 
 const root = ref(null);
-const world = ref(null);
+const view = ref(null);
 const enterButton = ref(null);
-const camera = ref(0);
 const reduced = ref(false);
+let world = null;
+let frame = 0;
+let alive = true;
 
 const signLabel = computed(() =>
   props.walk.stopId ? textFor(props.localeId, props.walk.stopId) : "",
 );
 
-const frame = computed(() => (Math.floor(props.walk.x / 12) % 2 === 0 ? "0%" : "100%"));
-
-function place(x) {
-  return `${(x / WORLD.width) * 100}%`;
+function labels() {
+  return stops.map((stop) => textFor(props.localeId, stop.id));
 }
 
-function updateCamera() {
-  const view = root.value?.clientWidth ?? 0;
-  const width = world.value?.clientWidth ?? view;
-  const scale = width / WORLD.width;
-  const focus = props.walk.x * scale - view * 0.38;
-  camera.value = Math.min(Math.max(focus, 0), Math.max(0, width - view));
+function draw() {
+  if (!alive || !world) return;
+  world.sync(props.walk);
+  world.render();
+  frame = window.requestAnimationFrame(draw);
 }
 
 function hold(dir, event) {
@@ -60,7 +58,10 @@ function trap(event) {
   }
 }
 
-watch(() => props.walk.x, updateCamera);
+watch(
+  () => props.localeId,
+  () => world?.setLabels(labels()),
+);
 
 watch(
   () => props.walk.mode,
@@ -71,42 +72,40 @@ watch(
   },
 );
 
+function onResize() {
+  if (!root.value || !world) return;
+  world.resize(root.value.clientWidth, root.value.clientHeight);
+}
+
 onMounted(() => {
   reduced.value = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
-  updateCamera();
-  window.addEventListener("resize", updateCamera);
+  createPathWorld(view.value)
+    .then((api) => {
+      if (!alive) {
+        api.dispose();
+        return;
+      }
+      world = api;
+      world.setLabels(labels());
+      onResize();
+      draw();
+    })
+    .catch(() => {});
+  window.addEventListener("resize", onResize);
 });
 
-onBeforeUnmount(() => window.removeEventListener("resize", updateCamera));
+onBeforeUnmount(() => {
+  alive = false;
+  window.cancelAnimationFrame(frame);
+  window.removeEventListener("resize", onResize);
+  world?.dispose();
+  world = null;
+});
 </script>
 
 <template>
   <div ref="root" class="path">
-    <div
-      ref="world"
-      class="world"
-      :style="{ transform: `translate3d(${-camera}px, 0, 0)` }"
-    >
-      <img class="plate" :src="grove" alt="" />
-      <div
-        v-for="stop in stops"
-        :key="stop.id"
-        class="sign"
-        :style="{ left: place(stop.x) }"
-      >
-        <p class="board">{{ textFor(localeId, stop.id) }}</p>
-        <i class="post"></i>
-      </div>
-      <div
-        class="panda"
-        :style="{
-          left: place(walk.x),
-          backgroundImage: `url(${panda})`,
-          backgroundPosition: `${frame} 0`,
-          transform: `translateX(-50%) scaleX(${walk.facing})`,
-        }"
-      ></div>
-    </div>
+    <canvas ref="view" aria-hidden="true"></canvas>
 
     <div class="drift" aria-hidden="true">
       <i class="flake"></i>

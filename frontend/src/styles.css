@@ -380,64 +380,12 @@ body {
   overflow: hidden;
 }
 
-.world {
+.path canvas {
   position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: max(100%, calc(100dvh * 1920 / 880));
-}
-
-.plate {
-  display: block;
+  inset: 0;
   width: 100%;
-  height: calc(100% * 1080 / 880);
-  object-fit: cover;
-  object-position: center top;
+  height: 100%;
   image-rendering: pixelated;
-}
-
-.sign {
-  position: absolute;
-  bottom: 11%;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.board {
-  margin: 0;
-  padding: 0.28rem 0.5rem;
-  background: #e7d3a8;
-  color: #1a2a14;
-  border: 4px solid #5c3b22;
-  font-family: "Josefin Slab", serif;
-  font-size: 0.95rem;
-  font-weight: 700;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-.post {
-  width: 8px;
-  height: 46px;
-  background: #6b4428;
-  box-shadow: 2px 0 0 #3e2614;
-}
-
-.panda {
-  position: absolute;
-  z-index: 2;
-  bottom: 9%;
-  height: 22%;
-  aspect-ratio: 113 / 150;
-  background-repeat: no-repeat;
-  background-size: 200% 100%;
-  image-rendering: pixelated;
-  pointer-events: none;
 }
 
 .who-name {
