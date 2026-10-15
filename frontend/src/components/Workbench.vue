@@ -55,7 +55,7 @@ async function openProject(position) {
   }
   selected.value = position;
   const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
-  const narrow = window.matchMedia?.("(max-width: 860px)")?.matches ?? false;
+  const narrow = window.matchMedia?.("(max-width: 700px)")?.matches ?? false;
   if (reduce || narrow) {
     shown.value = position;
     return;
@@ -202,7 +202,7 @@ function stepShot(project, delta) {
 .bench {
   position: relative;
   width: 100%;
-  min-height: 100dvh;
+  min-height: 100%;
   color: #1a1208;
 }
 
@@ -264,7 +264,7 @@ function stepShot(project, delta) {
   flex-direction: column;
   align-items: center;
   gap: 0.6rem;
-  padding: 0 1rem 5rem;
+  padding: 0 1rem 1.4rem;
 }
 
 .hud {
@@ -339,7 +339,7 @@ function stepShot(project, delta) {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 1.25fr 0.85fr;
+  grid-template-columns: 0.78fr 1.22fr;
   min-height: 24rem;
   background: #f4ecda;
   box-shadow: 0 0 0 3px #3a2414;
@@ -454,6 +454,7 @@ function stepShot(project, delta) {
 }
 
 .index {
+  order: -1;
   display: flex;
   flex-direction: column;
   padding: 0.45rem;
@@ -503,7 +504,7 @@ function stepShot(project, delta) {
   outline-offset: 2px;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 700px) {
   .picker {
     display: grid;
     gap: 0.35rem;

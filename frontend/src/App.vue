@@ -57,6 +57,7 @@ function sendLetter() {
 
 <template>
   <main class="clairiere" :class="{ 'is-bench': view === 'bench' }">
+    <div class="scene-slot">
     <template v-if="view === 'grove'">
       <PathScene
         :walk="walk"
@@ -182,16 +183,17 @@ function sendLetter() {
         </div>
       </GroveScene>
     </div>
+    </div>
 
     <nav class="frise" :class="{ 'is-open': jumpsOpen }" :aria-label="textFor(localeId, 'jump')">
-      <button type="button" class="frise-toggle" :aria-expanded="jumpsOpen" @click="jumpsOpen = !jumpsOpen">
-        {{ textFor(localeId, "jump") }}
-      </button>
       <div class="frise-list">
         <button v-for="id in STOP_IDS" :key="id" type="button" @click="onJump(id)">
           {{ textFor(localeId, id) }}
         </button>
       </div>
+      <button type="button" class="frise-toggle" :aria-expanded="jumpsOpen" @click="jumpsOpen = !jumpsOpen">
+        {{ textFor(localeId, "jump") }}
+      </button>
     </nav>
   </main>
 </template>

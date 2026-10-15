@@ -135,67 +135,50 @@ function paintSign(label) {
   return canvas;
 }
 
-function buildPanda() {
-  const black = new THREE.MeshLambertMaterial({ color: "#1a1a1a" });
-  const white = new THREE.MeshLambertMaterial({ color: "#f4f1e6" });
-  const cream = new THREE.MeshLambertMaterial({ color: "#f3e6c4" });
-  const ink = new THREE.MeshLambertMaterial({ color: "#111111" });
+function loadLogo() {
+  return new Promise((resolve, reject) => {
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      "/logo-panda.png",
+      (texture) => {
+        texture.magFilter = THREE.NearestFilter;
+        texture.minFilter = THREE.NearestFilter;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        resolve(texture);
+      },
+      undefined,
+      () => reject(new Error("logo")),
+    );
+  });
+}
+
+function buildLogo(texture) {
+  const height = 1.35;
+  const width = height * (texture.image?.width || 316) / (texture.image?.height || 385);
   const actor = new THREE.Group();
-  const leftLeg = new THREE.Group();
-  const rightLeg = new THREE.Group();
-  const torso = new THREE.Group();
-  const leftArm = new THREE.Group();
-  const rightArm = new THREE.Group();
-  const hip = 0.58;
-
-  function box(parent, size, position, material) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(size[0], size[1], size[2]), material);
-    mesh.position.set(position[0], position[1], position[2]);
-    parent.add(mesh);
-  }
-
-  leftLeg.position.set(-0.24, hip, 0);
-  rightLeg.position.set(0.24, hip, 0);
-  box(leftLeg, [0.34, 0.4, 0.36], [0, -0.2, 0], black);
-  box(rightLeg, [0.34, 0.4, 0.36], [0, -0.2, 0], black);
-  box(leftLeg, [0.38, 0.14, 0.42], [0, -0.38, 0.06], black);
-  box(rightLeg, [0.38, 0.14, 0.42], [0, -0.38, 0.06], black);
-
-  torso.position.y = hip;
-  box(torso, [1.02, 0.82, 0.7], [0, 0.4, 0], black);
-  box(torso, [0.62, 0.5, 0.18], [0, 0.32, 0.36], cream);
-  box(torso, [0.92, 0.78, 0.8], [0, 1.16, 0.04], white);
-  box(torso, [0.26, 0.26, 0.2], [-0.36, 1.62, 0], black);
-  box(torso, [0.26, 0.26, 0.2], [0.36, 1.62, 0], black);
-  box(torso, [0.3, 0.24, 0.12], [-0.22, 1.2, 0.42], black);
-  box(torso, [0.3, 0.24, 0.12], [0.22, 1.2, 0.42], black);
-  box(torso, [0.12, 0.12, 0.06], [-0.22, 1.22, 0.5], white);
-  box(torso, [0.12, 0.12, 0.06], [0.22, 1.22, 0.5], white);
-  box(torso, [0.06, 0.07, 0.04], [-0.22, 1.21, 0.54], ink);
-  box(torso, [0.06, 0.07, 0.04], [0.22, 1.21, 0.54], ink);
-  box(torso, [0.16, 0.1, 0.1], [0, 0.98, 0.46], ink);
-
-  const shoulder = 0.72;
-  leftArm.position.set(-0.62, shoulder, 0);
-  rightArm.position.set(0.62, shoulder, 0);
-  box(leftArm, [0.26, 0.52, 0.26], [0, -0.26, 0], black);
-  box(rightArm, [0.26, 0.52, 0.26], [0, -0.26, 0], black);
-  torso.add(leftArm, rightArm);
-  actor.add(leftLeg, rightLeg, torso);
-
+  const body = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height),
+    new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      alphaTest: 0.35,
+      side: THREE.DoubleSide,
+    }),
+  );
+  body.position.y = 0.12 + height / 2;
   const shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(0.62, 12),
+    new THREE.CircleGeometry(0.42, 12),
     new THREE.MeshBasicMaterial({ color: "#6d5a3c" }),
   );
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.set(0, 0.13, 0);
-  actor.add(shadow);
-
-  return { actor, leftLeg, rightLeg, leftArm, rightArm };
+  actor.add(shadow, body);
+  return { actor, body, restY: body.position.y };
 }
 
 export async function createPathWorld(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
+  const logo = await loadLogo();
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.setClearColor(SKY);
 
@@ -276,7 +259,7 @@ export async function createPathWorld(canvas) {
     signBoards.push(board);
   });
 
-  const panda = buildPanda();
+  const panda = buildLogo(logo);
   scene.add(panda.actor);
 
   let portrait = false;
@@ -288,10 +271,9 @@ export async function createPathWorld(canvas) {
     const aspect = width / Math.max(height, 1);
     portrait = width < 760 || aspect < 0.9;
     camera.aspect = aspect;
-    camera.fov = portrait ? 30 : 28;
+    camera.fov = portrait ? 54 : 28;
     camera.updateProjectionMatrix();
-    const scale = portrait ? 1.35 : 1;
-    signGroups.forEach((group) => group.scale.setScalar(scale));
+    signGroups.forEach((group) => group.scale.setScalar(portrait ? 0.58 : 1));
   }
 
   function setLabels(labels) {
@@ -306,16 +288,15 @@ export async function createPathWorld(canvas) {
 
   function sync(walk) {
     const x = toPathX(walk.x);
+    const size = portrait ? 0.92 : 1;
     panda.actor.position.x = x;
-    panda.actor.rotation.y = walk.facing * 1.1;
+    panda.actor.scale.set(walk.facing === -1 ? -size : size, size, size);
     const step = walk.mode === "walk" ? Math.sin(walk.x / 9) : 0;
-    panda.leftLeg.rotation.x = step * 0.7;
-    panda.rightLeg.rotation.x = -step * 0.7;
-    panda.leftArm.rotation.x = -step * 0.5;
-    panda.rightArm.rotation.x = step * 0.5;
+    panda.body.position.y = panda.restY + Math.abs(step) * 0.05;
+    panda.body.rotation.z = step * 0.05;
     if (portrait) {
-      camera.position.set(x - 0.15, 2.2, 4.4);
-      camera.lookAt(x + 1.15, 1.05, 0);
+      camera.position.set(x - 0.05, 3.35, 7.6);
+      camera.lookAt(x + 0.95, 0.55, 0);
     } else {
       camera.position.set(x + 0.35, 4.05, 9.1);
       camera.lookAt(x + 1.7, 0.85, 0);
