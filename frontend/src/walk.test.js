@@ -8,16 +8,17 @@ function travel(state, dir, distance) {
 
 describe("reduceWalk", () => {
   it("part à gauche, tourné vers la droite", () => {
-    expect(createWalk()).toMatchObject({ x: WORLD.minX, facing: 1, mode: "walk", hint: true });
+    expect(createWalk()).toMatchObject({ x: 220, facing: 1, mode: "walk", hint: true });
   });
 
   it("avance et recule sans sortir du chemin", () => {
     const right = travel(createWalk(), 1, 40);
-    expect(right.x).toBe(WORLD.minX + 40);
+    expect(right.x).toBe(260);
     expect(right.facing).toBe(1);
 
     const left = travel(right, -1, 400);
-    expect(left.x).toBe(WORLD.minX);
+    expect(left.x).toBe(260 - WORLD.maxStep);
+    expect(left.x).toBeGreaterThan(WORLD.minX);
     expect(left.facing).toBe(-1);
 
     const end = travel({ ...createWalk(), x: WORLD.maxX - 10 }, 1, 40);
@@ -74,7 +75,7 @@ describe("reduceWalk", () => {
 
   it("borne un pas aberrant", () => {
     const next = travel(createWalk(), 1, 10_000);
-    expect(next.x - WORLD.minX).toBeLessThanOrEqual(WORLD.maxStep);
+    expect(next.x - createWalk().x).toBeLessThanOrEqual(WORLD.maxStep);
   });
 });
 

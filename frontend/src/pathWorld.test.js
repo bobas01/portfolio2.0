@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fillSpriteHoles, toPathX } from "./pathWorld.js";
+import { fillSpriteHoles, toPathX, walkPose } from "./pathWorld.js";
 import { WORLD, stops } from "./walk.js";
 
 describe("toPathX", () => {
@@ -29,5 +29,16 @@ describe("fillSpriteHoles", () => {
     fillSpriteHoles(pixels, 3, 3);
     expect(pixels[(1 * 3 + 1) * 4 + 3]).toBe(255);
     expect(pixels[3]).toBe(0);
+  });
+});
+
+describe("walkPose", () => {
+  it("balance un peu seulement quand le panda avance", () => {
+    expect(walkPose(0, false, false)).toEqual({ frame: 0, lift: 0, tilt: 0 });
+    expect(walkPose(40, true, true)).toEqual({ frame: 0, lift: 0, tilt: 0 });
+    const moving = walkPose(10, true, false);
+    expect(moving.lift).toBeGreaterThan(0);
+    expect(moving.lift).toBeLessThan(0.08);
+    expect(Math.abs(moving.tilt)).toBeLessThan(0.1);
   });
 });

@@ -491,17 +491,21 @@ body {
 
 .pad {
   position: absolute;
-  z-index: 4;
-  left: 0;
-  right: 0;
-  bottom: 0.8rem;
+  z-index: 8;
+  left: 50%;
+  bottom: 1rem;
   display: flex;
-  justify-content: space-between;
-  padding: 0 0.8rem;
+  justify-content: center;
+  gap: 0.85rem;
+  width: max-content;
+  transform: translateX(-50%);
   pointer-events: none;
 }
 
 .pad button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
   width: 4.25rem;
   height: 4.25rem;
   pointer-events: auto;

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { WORLD, stops } from "./walk.js";
 
 const SKY = "#9ed4f2";
@@ -135,50 +136,107 @@ function paintSign(label) {
   return canvas;
 }
 
+export function walkPose(x, moving, reduced) {
+  if (reduced || !moving) return { frame: 0, lift: 0, tilt: 0 };
+  const step = x / 18;
+  return {
+    frame: 0,
+    lift: Math.abs(Math.sin(step)) * 0.04,
+    tilt: Math.sin(step) * 0.055,
+  };
+}
+
 function loadLogo() {
   return new Promise((resolve, reject) => {
     const loader = new THREE.TextureLoader();
     loader.load(
       "/logo-panda.png",
-      (texture) => {
-        texture.magFilter = THREE.NearestFilter;
-        texture.minFilter = THREE.NearestFilter;
-        texture.colorSpace = THREE.SRGBColorSpace;
-        resolve(texture);
-      },
+      (texture) => resolve(texture),
       undefined,
       () => reject(new Error("logo")),
     );
   });
 }
 
-function buildLogo(texture) {
-  const height = 1.35;
-  const width = height * (texture.image?.width || 316) / (texture.image?.height || 385);
-  const actor = new THREE.Group();
-  const body = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, height),
-    new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      alphaTest: 0.35,
-      side: THREE.DoubleSide,
-    }),
-  );
-  body.position.y = 0.12 + height / 2;
+function loadVolume() {
+  return new GLTFLoader().loadAsync("/models/panda-volume.glb");
+}
+
+function projectDrawing(geometry) {
+  const position = geometry.attributes.position;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (let index = 0; index < position.count; index += 1) {
+    minX = Math.min(minX, position.getX(index));
+    maxX = Math.max(maxX, position.getX(index));
+    minY = Math.min(minY, position.getY(index));
+    maxY = Math.max(maxY, position.getY(index));
+  }
+  const spanX = maxX - minX || 1;
+  const spanY = maxY - minY || 1;
+  const uv = new Float32Array(position.count * 2);
+  for (let index = 0; index < position.count; index += 1) {
+    uv[index * 2] = (position.getX(index) - minX) / spanX * 0.9 + 0.05;
+    uv[index * 2 + 1] = (position.getY(index) - minY) / spanY * 0.9 + 0.05;
+  }
+  geometry.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+}
+
+function buildVolume(gltf, texture) {
+  const source = gltf.scene.getObjectByProperty("isMesh", true);
+  const geometry = source.geometry.clone();
+  projectDrawing(geometry);
+  geometry.computeBoundingBox();
+  const box = geometry.boundingBox;
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const scale = 1.35 / size.y;
+  geometry.translate(-center.x, -box.min.y, -center.z);
+  geometry.scale(scale, scale, scale);
+  geometry.computeVertexNormals();
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    side: THREE.DoubleSide,
+  });
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace("void main() {", "varying vec3 vEdgeNormal;\nvoid main() {")
+      .replace(
+        "#include <begin_vertex>",
+        "vEdgeNormal = normalize(normalMatrix * normal);\n#include <begin_vertex>",
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace("void main() {", "varying vec3 vEdgeNormal;\nvoid main() {")
+      .replace(
+        "#include <map_fragment>",
+        `#include <map_fragment>
+        float rim = 1.0 - abs(normalize(vEdgeNormal).z);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.07), smoothstep(0.55, 0.95, rim));`,
+      );
+  };
+  const body = new THREE.Mesh(geometry, material);
+  body.position.y = 0.12;
   const shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(0.42, 12),
+    new THREE.CircleGeometry(0.46, 12),
     new THREE.MeshBasicMaterial({ color: "#6d5a3c" }),
   );
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.set(0, 0.13, 0);
+  const actor = new THREE.Group();
   actor.add(shadow, body);
-  return { actor, body, restY: body.position.y };
+  return { actor, body, shadow, frames: [material], restY: body.position.y };
 }
 
 export async function createPathWorld(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
-  const logo = await loadLogo();
+  const [logo, volume] = await Promise.all([loadLogo(), loadVolume()]);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.setClearColor(SKY);
 
@@ -259,10 +317,12 @@ export async function createPathWorld(canvas) {
     signBoards.push(board);
   });
 
-  const panda = buildLogo(logo);
+  const panda = buildVolume(volume, logo);
   scene.add(panda.actor);
 
   let portrait = false;
+  let previousX = null;
+  const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)") ?? { matches: false };
 
   function resize(width, height) {
     const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -289,17 +349,27 @@ export async function createPathWorld(canvas) {
   function sync(walk) {
     const x = toPathX(walk.x);
     const size = portrait ? 0.92 : 1;
+    const face = walk.facing === -1 ? -1 : 1;
+    const moved = previousX !== null && Math.abs(walk.x - previousX) > 0.15;
+    previousX = walk.x;
+    const pose = walkPose(walk.x, walk.mode === "walk" && moved, motion.matches);
+    const breath = !motion.matches && walk.mode === "walk" && !moved
+      ? Math.sin(performance.now() / 480) * 0.035
+      : 0;
+    panda.body.material = panda.frames[pose.frame];
     panda.actor.position.x = x;
-    panda.actor.scale.set(walk.facing === -1 ? -size : size, size, size);
-    const step = walk.mode === "walk" ? Math.sin(walk.x / 9) : 0;
-    panda.body.position.y = panda.restY + Math.abs(step) * 0.05;
-    panda.body.rotation.z = step * 0.05;
+    panda.actor.scale.set(face * size, size, size);
+    panda.body.scale.set(1, 1, 1);
+    panda.body.position.y = panda.restY + pose.lift + breath;
+    panda.body.rotation.set(0, 0, (pose.tilt + breath) * face);
+    const shadowScale = 1 - pose.lift * 0.5;
+    panda.shadow.scale.set(shadowScale, shadowScale, 1);
     if (portrait) {
       camera.position.set(x - 0.05, 3.35, 7.6);
       camera.lookAt(x + 0.95, 0.55, 0);
     } else {
-      camera.position.set(x + 0.35, 4.05, 9.1);
-      camera.lookAt(x + 1.7, 0.85, 0);
+      camera.position.set(x + 0.2, 3.7, 8.6);
+      camera.lookAt(x + 0.45, 0.62, 0);
     }
   }
 

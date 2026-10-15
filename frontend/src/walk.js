@@ -8,7 +8,7 @@ export const stops = [
 ];
 
 export const WORLD = {
-  minX: 220,
+  minX: 40,
   maxX: 1700,
   width: 1920,
   speed: 260,
@@ -25,7 +25,7 @@ export function isStopId(id) {
 
 export function createWalk() {
   return {
-    x: WORLD.minX,
+    x: 220,
     facing: 1,
     mode: "walk",
     stopId: null,
