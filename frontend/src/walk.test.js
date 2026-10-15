@@ -49,16 +49,13 @@ describe("reduceWalk", () => {
   it("continuer libère la pancarte sans la rouvrir tant qu'on ne s'éloigne pas", () => {
     const sign = reduceWalk(createWalk(), { type: "open", id: "skills" });
     const walking = reduceWalk(sign, { type: "continue" });
-    expect(walking).toMatchObject({ mode: "walk", stopId: null, hold: "skills", x: stops[1].x });
+    expect(walking).toMatchObject({ mode: "walk", stopId: null, hold: "skills" });
+    expect(walking.x).toBeGreaterThan(stops[1].x + WORLD.leave);
 
     const still = travel(walking, 1, 30);
     expect(still.mode).toBe("walk");
-    expect(still.hold).toBe("skills");
-
-    let away = still;
-    for (let step = 0; step < 6; step += 1) away = travel(away, 1, 40);
-    expect(away.hold).toBe(null);
-    expect(away.mode).toBe("walk");
+    expect(still.hold).toBe(null);
+    expect(still.stopId).toBe(null);
   });
 
   it("rencontre la pancarte la plus proche dans le sens de la marche", () => {

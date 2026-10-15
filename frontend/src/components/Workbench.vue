@@ -6,6 +6,7 @@ import { benchSkills, projects, sentenceFor, shotAt, skillLit } from "../works.j
 
 const props = defineProps({
   localeId: { type: String, required: true },
+  backLabel: { type: String, default: "" },
 });
 
 defineEmits(["grove"]);
@@ -81,7 +82,7 @@ function stepShot(project, delta) {
     <GroveScene class="bench-ground" />
     <header class="bench-bar">
       <button type="button" class="back" @click="$emit('grove')">
-        {{ t("grove") }}
+        {{ backLabel || t("grove") }}
       </button>
       <p class="who">{{ t("title") }}</p>
       <slot name="languages" />

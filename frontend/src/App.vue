@@ -1,57 +1,62 @@
 <script setup>
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import GroveScene from "./components/GroveScene.vue";
-import Intro from "./components/Intro.vue";
 import LanguageSwitch from "./components/LanguageSwitch.vue";
+import PathScene from "./components/PathScene.vue";
 import Workbench from "./components/Workbench.vue";
 import { contact, cvByLocale, textFor } from "./copy.js";
-import { sectionIds } from "./menu.js";
+import { useJourney } from "./useJourney.js";
 import { useLocale } from "./useLocale.js";
+import { isStopId } from "./walk.js";
+import { benchSkills } from "./works.js";
 
-const { locales, localeId, title, lead, languagesLabel, chooseLocale } = useLocale();
+const { locales, localeId, title, languagesLabel, chooseLocale } = useLocale();
+const { walk, press, release, enter, resume, open, dismiss } = useJourney();
 const view = ref("grove");
 
-const menuItems = computed(() =>
-  sectionIds.map((id) => ({ id, label: textFor(localeId.value, id) })),
-);
-
-function openSection(id) {
+function onEnter() {
+  const id = enter();
+  if (!isStopId(id)) return;
   view.value = id === "travaux" ? "bench" : id;
+}
+
+function onResume() {
+  resume();
+  view.value = "grove";
 }
 </script>
 
 <template>
   <main class="clairiere" :class="{ 'is-bench': view === 'bench' }">
-    <div v-if="view === 'grove'" class="stage">
-      <GroveScene>
-        <div class="top-bar">
-          <LanguageSwitch
-            variant="bar"
-            :locales="locales"
-            :current-id="localeId"
-            :label="languagesLabel"
-            @choose="chooseLocale"
-          />
-        </div>
-        <div class="arrival">
-          <div class="panel">
-            <Intro :title="title" :lead="lead" />
-            <nav class="lines" :aria-label="textFor(localeId, 'portfolio')">
-              <button
-                v-for="item in menuItems"
-                :key="item.id"
-                type="button"
-                @click="openSection(item.id)"
-              >
-                {{ item.label }}
-              </button>
-            </nav>
-          </div>
-        </div>
-      </GroveScene>
+    <div v-show="view === 'grove'" class="stage">
+      <PathScene
+        :walk="walk"
+        :locale-id="localeId"
+        @press="press"
+        @release="release"
+        @enter="onEnter"
+        @resume="onResume"
+        @open="open"
+        @dismiss="dismiss"
+      />
+      <div class="top-bar">
+        <p class="who-name">{{ title }}</p>
+        <LanguageSwitch
+          variant="bar"
+          :locales="locales"
+          :current-id="localeId"
+          :label="languagesLabel"
+          @choose="chooseLocale"
+        />
+      </div>
     </div>
 
-    <Workbench v-else-if="view === 'bench'" :locale-id="localeId" @grove="view = 'grove'">
+    <Workbench
+      v-else-if="view === 'bench'"
+      :locale-id="localeId"
+      :back-label="textFor(localeId, 'resume')"
+      @grove="onResume"
+    >
       <template #languages>
         <LanguageSwitch
           variant="bar"
@@ -66,8 +71,8 @@ function openSection(id) {
     <div v-else class="stage">
       <GroveScene>
         <div class="top-bar">
-          <button type="button" class="back-link" @click="view = 'grove'">
-            {{ textFor(localeId, "grove") }}
+          <button type="button" class="back-link" @click="onResume">
+            {{ textFor(localeId, "resume") }}
           </button>
           <LanguageSwitch
             variant="bar"
@@ -90,6 +95,15 @@ function openSection(id) {
                 <p>{{ textFor(localeId, "aboutNext") }}</p>
                 <p>{{ textFor(localeId, "aboutNow") }}</p>
               </div>
+            </div>
+            <div v-else-if="view === 'skills'" class="kit">
+              <p class="contact-line">{{ textFor(localeId, "skillsIntro") }}</p>
+              <ul>
+                <li v-for="skill in benchSkills" :key="skill.id">
+                  <img :src="skill.logo" :alt="skill.name" />
+                  <span>{{ skill.name }}</span>
+                </li>
+              </ul>
             </div>
             <template v-else>
               <p class="contact-line">{{ textFor(localeId, "contactIntro") }}</p>

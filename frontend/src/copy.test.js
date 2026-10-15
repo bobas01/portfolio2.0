@@ -24,6 +24,13 @@ describe("textFor", () => {
   it("renvoie une chaîne vide si la clé n'existe pas", () => {
     expect(textFor("en", "missing")).toBe("");
   });
+
+  it("donne le chemin dans les trois langues", () => {
+    expect(textFor("fr", "skills")).toBe("Savoir-faire");
+    expect(textFor("en", "resume")).toBe("Continue the journey");
+    expect(textFor("pt-br", "hintClose")).toBe("Entendi");
+    expect(textFor("fr", "<img>")).toBe("");
+  });
 });
 
 describe("resolveLocale", () => {

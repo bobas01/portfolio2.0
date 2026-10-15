@@ -374,10 +374,224 @@ body {
   }
 }
 
+.path {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: max(100%, calc(100dvh * 1920 / 880));
+}
+
+.plate {
+  display: block;
+  width: 100%;
+  height: calc(100% * 1080 / 880);
+  object-fit: cover;
+  object-position: center top;
+  image-rendering: pixelated;
+}
+
+.sign {
+  position: absolute;
+  top: calc((846 - 118) / 880 * 100%);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.board {
+  margin: 0;
+  padding: 0.28rem 0.5rem;
+  background: #e7d3a8;
+  color: #1a2a14;
+  border: 4px solid #5c3b22;
+  font-family: "Josefin Slab", serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.post {
+  width: 8px;
+  height: 46px;
+  background: #6b4428;
+  box-shadow: 2px 0 0 #3e2614;
+}
+
+.panda {
+  position: absolute;
+  z-index: 2;
+  top: calc((846 - 150) / 880 * 100%);
+  width: calc(113 / 1920 * 100%);
+  aspect-ratio: 113 / 150;
+  background-repeat: no-repeat;
+  background-size: 200% 100%;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.who-name {
+  margin: 0;
+  padding: 0.2rem 0.7rem;
+  color: #d7f0c4;
+  background: #0b1c14;
+  border: 3px solid #163628;
+  outline: 2px solid #8fd18a;
+  outline-offset: -5px;
+  font-size: 1rem;
+}
+
+.hint,
+.sign-card,
+.stops {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  width: min(22rem, calc(100vw - 2.5rem));
+  transform: translateX(-50%);
+}
+
+.hint {
+  bottom: 5.5rem;
+}
+
+.hint p,
+.sign-card h2,
+.stops button,
+.sign-actions button,
+.kit p,
+.kit span {
+  margin: 0;
+  color: #d7f0c4;
+  font-family: "Josefin Slab", serif;
+  font-weight: 700;
+}
+
+.sign-card h2,
+.hint p {
+  text-align: center;
+  font-size: 1.35rem;
+}
+
+.hint button,
+.sign-actions button,
+.stops button,
+.pad button {
+  min-height: 2.75rem;
+  border: 2px solid #1d4a32;
+  background: #10281c;
+  color: #d7f0c4;
+  font-family: "Josefin Slab", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hint button,
+.sign-actions {
+  margin-top: 0.8rem;
+}
+
+.sign-actions,
+.stops {
+  display: grid;
+  gap: 6px;
+}
+
+.sign-card {
+  top: 28%;
+}
+
+.stops {
+  bottom: 1rem;
+  padding: 0.7rem;
+}
+
+.pad {
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  right: 0;
+  bottom: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0.8rem;
+  pointer-events: none;
+}
+
+.pad button {
+  width: 4.25rem;
+  height: 4.25rem;
+  pointer-events: auto;
+  touch-action: none;
+  box-shadow: 0 3px 0 #06140c;
+}
+
+.pad svg {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.hint button:hover,
+.sign-actions button:hover,
+.stops button:hover,
+.pad button:hover,
+.hint button:focus-visible,
+.sign-actions button:focus-visible,
+.stops button:focus-visible,
+.pad button:focus-visible {
+  color: #f4ffe8;
+  border-color: #8fd18a;
+}
+
+.hint button:focus-visible,
+.sign-actions button:focus-visible,
+.stops button:focus-visible,
+.pad button:focus-visible,
+.who-name {
+  outline: 2px solid #8fd18a;
+}
+
+.kit ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: 0.55rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kit li {
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  min-height: 4.6rem;
+  padding: 0.4rem 0.2rem;
+  border: 2px solid #1d4a32;
+  background: #10281c;
+}
+
+.kit img {
+  width: 1.8rem;
+  height: 1.8rem;
+  object-fit: contain;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .grove,
   .flake,
-  .panel {
+  .panel,
+  .plate {
     animation: none;
   }
 }

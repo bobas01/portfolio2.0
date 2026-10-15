@@ -1,19 +1,19 @@
 export const STOP_IDS = ["propos", "skills", "travaux", "contact"];
 
 export const stops = [
-  { id: "propos", x: 560 },
-  { id: "skills", x: 1040 },
-  { id: "travaux", x: 1520 },
-  { id: "contact", x: 2000 },
+  { id: "propos", x: 420 },
+  { id: "skills", x: 780 },
+  { id: "travaux", x: 1140 },
+  { id: "contact", x: 1500 },
 ];
 
 export const WORLD = {
-  minX: 160,
-  maxX: 2280,
-  width: 2440,
-  speed: 280,
-  radius: 46,
-  leave: 120,
+  minX: 220,
+  maxX: 1700,
+  width: 1920,
+  speed: 260,
+  radius: 54,
+  leave: 140,
   maxStep: 48,
 };
 
@@ -118,7 +118,9 @@ export function reduceWalk(state, action) {
   if (action.type === "continue") {
     if (current.mode !== "sign" && current.mode !== "page") return current;
     if (!isStopId(current.stopId)) return { ...current, mode: "walk", stopId: null, hold: null };
-    return { ...current, mode: "walk", hold: current.stopId, stopId: null };
+    const stop = stopAt(current.stopId);
+    const nudged = clamp(stop.x + current.facing * (WORLD.leave + 8), WORLD.minX, WORLD.maxX);
+    return { ...current, x: nudged, mode: "walk", hold: current.stopId, stopId: null };
   }
 
   if (action.type === "dismiss-hint") {
