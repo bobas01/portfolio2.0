@@ -8,7 +8,7 @@ describe("useLocale", () => {
     chooseLocale("en");
 
     expect(localeId.value).toBe("en");
-    expect(lead.value).toBe("I build sites and tools with Vue, Symfony and Docker.");
+    expect(lead.value).toBe("The panda is the mascot. The code is me.");
     expect(document.documentElement.lang).toBe("en");
     expect(document.title).toBe("Alexandre Sequeira");
   });

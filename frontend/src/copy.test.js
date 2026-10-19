@@ -14,11 +14,11 @@ describe("findLocale", () => {
 
 describe("textFor", () => {
   it("lit la phrase anglaise", () => {
-    expect(textFor("en", "lead")).toBe("I build sites and tools with Vue, Symfony and Docker.");
+    expect(textFor("en", "lead")).toBe("The panda is the mascot. The code is me.");
   });
 
   it("retombe sur le français si la langue n'existe pas", () => {
-    expect(textFor("xx", "lead")).toBe("Je construis des sites et des outils avec Vue, Symfony et Docker.");
+    expect(textFor("xx", "lead")).toBe("Le panda, c'est la mascotte. Le code, c'est moi.");
   });
 
   it("renvoie une chaîne vide si la clé n'existe pas", () => {

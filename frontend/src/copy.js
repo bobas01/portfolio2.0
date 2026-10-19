@@ -7,7 +7,8 @@ export const locales = [
 const messages = {
   fr: {
     title: "Alexandre Sequeira",
-    lead: "Je construis des sites et des outils avec Vue, Symfony et Docker.",
+    lead: "Le panda, c'est la mascotte. Le code, c'est moi.",
+    role: "Développeur full stack · PHP & JavaScript",
     languages: "Langues",
     portfolio: "Portfolio",
     travaux: "Projets",
@@ -37,7 +38,8 @@ const messages = {
   },
   en: {
     title: "Alexandre Sequeira",
-    lead: "I build sites and tools with Vue, Symfony and Docker.",
+    lead: "The panda is the mascot. The code is me.",
+    role: "Full-stack developer · PHP & JavaScript",
     languages: "Languages",
     portfolio: "Portfolio",
     travaux: "Projects",
@@ -67,7 +69,8 @@ const messages = {
   },
   "pt-br": {
     title: "Alexandre Sequeira",
-    lead: "Desenvolvo sites e ferramentas com Vue, Symfony e Docker.",
+    lead: "O panda é o mascote. O código sou eu.",
+    role: "Desenvolvedor full stack · PHP & JavaScript",
     languages: "Idiomas",
     portfolio: "Portfólio",
     travaux: "Projetos",

@@ -54,6 +54,39 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
     <div v-if="view === 'grove'" class="stage">
       <GroveScene>
         <div class="top-bar">
+          <span class="mark-frame">
+            <img class="mark" src="/logo-panda.png" alt="" />
+            <svg class="bamboo" viewBox="0 0 100 118" preserveAspectRatio="none" aria-hidden="true">
+              <rect x="0" y="0" width="8" height="118" fill="#6fae4a" />
+              <rect x="2" y="0" width="2" height="118" fill="#a6d672" />
+              <rect x="92" y="0" width="8" height="118" fill="#6fae4a" />
+              <rect x="94" y="0" width="2" height="118" fill="#a6d672" />
+              <rect x="0" y="0" width="100" height="8" fill="#5f9f3e" />
+              <rect x="0" y="2" width="100" height="2" fill="#98cc66" />
+              <rect x="0" y="110" width="100" height="8" fill="#5f9f3e" />
+              <rect x="0" y="112" width="100" height="2" fill="#98cc66" />
+              <g fill="#2f6b2a">
+                <rect x="0" y="34" width="8" height="3" />
+                <rect x="0" y="72" width="8" height="3" />
+                <rect x="92" y="46" width="8" height="3" />
+                <rect x="92" y="84" width="8" height="3" />
+                <rect x="36" y="0" width="3" height="8" />
+                <rect x="70" y="0" width="3" height="8" />
+                <rect x="28" y="110" width="3" height="8" />
+                <rect x="62" y="110" width="3" height="8" />
+              </g>
+              <g fill="#7a4f26">
+                <rect x="0" y="0" width="9" height="9" />
+                <rect x="91" y="0" width="9" height="9" />
+                <rect x="0" y="109" width="9" height="9" />
+                <rect x="91" y="109" width="9" height="9" />
+              </g>
+              <path d="M96 4 L118 -8 L108 9 Z" fill="#3f8f52" />
+              <path d="M98 10 L120 8 L104 17 Z" fill="#57a364" />
+              <path d="M4 114 L-18 126 L-8 109 Z" fill="#3f8f52" />
+              <path d="M2 108 L-20 110 L-4 101 Z" fill="#57a364" />
+            </svg>
+          </span>
           <LanguageSwitch
             variant="bar"
             :locales="locales"
@@ -64,8 +97,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
         </div>
         <div class="arrival">
           <div class="panel">
-            <img class="mark" src="/logo-panda.png" alt="" />
-            <Intro :title="title" :lead="lead" />
+            <Intro :title="title" :lead="lead" :role="textFor(localeId, 'role')" />
             <nav class="lines" :aria-label="textFor(localeId, 'portfolio')">
               <button
                 v-for="item in menuItems"
