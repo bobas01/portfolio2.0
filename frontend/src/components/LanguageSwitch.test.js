@@ -1,5 +1,5 @@
 import { mount } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import LanguageSwitch from "./LanguageSwitch.vue";
 
 const locales = [
@@ -20,4 +20,35 @@ describe("LanguageSwitch", () => {
 
     expect(wrapper.emitted("choose")).toEqual([["en"]]);
   });
+
+  it("n'affiche qu'une langue, puis les autres, et attend avant de les cacher", async () => {
+    vi.useFakeTimers();
+    const wrapper = mount(LanguageSwitch, {
+      props: {
+        locales: [
+          { id: "fr", label: "FR" },
+          { id: "en", label: "EN" },
+          { id: "pt-br", label: "PT" },
+        ],
+        currentId: "fr",
+        label: "Langues",
+        variant: "bar",
+      },
+    });
+
+    expect(wrapper.findAll("button")).toHaveLength(1);
+    await wrapper.get("button").trigger("click");
+    expect(wrapper.findAll("button")).toHaveLength(3);
+    await wrapper.get("nav").trigger("mouseleave");
+    expect(wrapper.findAll("button")).toHaveLength(3);
+    vi.advanceTimersByTime(900);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.findAll("button")).toHaveLength(1);
+    wrapper.unmount();
+    vi.useRealTimers();
+  });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });

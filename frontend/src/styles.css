@@ -159,6 +159,17 @@ body {
   animation: frame-open 0.7s cubic-bezier(0.16, 0.7, 0.2, 1) both;
 }
 
+.mark {
+  display: block;
+  width: 4.2rem;
+  height: 5rem;
+  margin: 0 auto 0.7rem;
+  padding: 0.2rem;
+  object-fit: contain;
+  background: #f7f3ea;
+  border: 2px solid #8fd18a;
+}
+
 .top-bar {
   position: absolute;
   z-index: 3;
@@ -325,6 +336,94 @@ body {
 
 .reach li:last-child {
   margin-top: 0.35rem;
+}
+
+.kit h2 {
+  margin: 1.15rem 0 0;
+  color: #d7f0c4;
+  font-family: "Josefin Slab", serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.kit ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: 0.55rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kit li {
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  min-height: 4.6rem;
+  padding: 0.4rem 0.2rem;
+  border: 2px solid #1d4a32;
+  background: #10281c;
+}
+
+.kit img {
+  width: 1.8rem;
+  height: 1.8rem;
+  object-fit: contain;
+}
+
+.kit span {
+  color: #d7f0c4;
+  font-family: "Josefin Slab", serif;
+  font-weight: 700;
+}
+
+.letter {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.letter label {
+  display: grid;
+  gap: 0.25rem;
+  color: #d7f0c4;
+  font-family: "Josefin Slab", serif;
+  font-weight: 700;
+}
+
+.letter input,
+.letter textarea {
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 2px solid #1d4a32;
+  background: #10281c;
+  color: #f4ffe8;
+  font: inherit;
+}
+
+.letter input:focus-visible,
+.letter textarea:focus-visible,
+.letter button:focus-visible {
+  outline: 2px solid #8fd18a;
+  outline-offset: 2px;
+}
+
+.letter button {
+  min-height: 2.75rem;
+  border: 2px solid #8fd18a;
+  background: #1d6b32;
+  color: #f4ffe8;
+  font-family: "Josefin Slab", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.letter p {
+  text-align: center;
+  font-size: 0.95rem;
 }
 
 @media (max-width: 640px) {

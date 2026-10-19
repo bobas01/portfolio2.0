@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findLocale, resolveLocale, textFor } from "./copy.js";
+import { findLocale, letterHref, resolveLocale, textFor } from "./copy.js";
 
 describe("findLocale", () => {
   it("retourne la langue demandée quand elle existe", () => {
@@ -23,6 +23,27 @@ describe("textFor", () => {
 
   it("renvoie une chaîne vide si la clé n'existe pas", () => {
     expect(textFor("en", "missing")).toBe("");
+  });
+
+  it("donne le savoir-faire et le formulaire dans les trois langues", () => {
+    expect(textFor("fr", "skills")).toBe("Savoir-faire");
+    expect(textFor("en", "groupCloud")).toBe("Cloud and services");
+    expect(textFor("pt-br", "formSend")).toBe("Enviar");
+    expect(textFor("fr", "<img>")).toBe("");
+  });
+});
+
+describe("letterHref", () => {
+  it("prépare un mailto et refuse un message vide ou un e-mail invalide", () => {
+    const href = letterHref("alseqdev@gmail.com", {
+      name: "Alex",
+      email: "alex@example.com",
+      message: "Bonjour",
+    });
+    expect(href.startsWith("mailto:alseqdev@gmail.com?")).toBe(true);
+    expect(href).toContain(encodeURIComponent("Alex <alex@example.com>"));
+    expect(letterHref("alseqdev@gmail.com", { name: "A", email: "pas-un-mail", message: "B" })).toBe("");
+    expect(letterHref("alseqdev@gmail.com", { name: "", email: "a@b.co", message: "B" })).toBe("");
   });
 });
 

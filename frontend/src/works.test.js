@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { projects, sentenceFor, shotAt, skillLit, skills } from "./works.js";
+import { projects, sentenceFor, shotAt, skillLit, skills, skillsIn } from "./works.js";
 
 describe("works", () => {
   it("reprend les compétences de BobasDev, dont Svelte, Docker et API Platform", () => {
@@ -8,6 +8,14 @@ describe("works", () => {
       expect.arrayContaining(["Vue.js", "Svelte", "Symfony", "Docker", "API Platform"]),
     );
     expect(skills).toHaveLength(20);
+    expect(skillsIn("dev").map((skill) => skill.name)).toContain("Vue.js");
+    expect(skillsIn("tools").map((skill) => skill.name)).toEqual(
+      expect.arrayContaining(["Git", "Figma", "Jira", "Agile"]),
+    );
+    expect(skillsIn("cloud").map((skill) => skill.name)).toEqual(
+      expect.arrayContaining(["AWS", "Stripe", "SMTP"]),
+    );
+    expect(skillsIn("<script>")).toEqual([]);
   });
 
   it("allume le bon outil au survol d’un projet", () => {

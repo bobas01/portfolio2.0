@@ -1,11 +1,13 @@
 <script setup>
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { PageFlip } from "page-flip/dist/js/page-flip.module.js";
 import GroveScene from "./GroveScene.vue";
 import { textFor } from "../copy.js";
 import { benchSkills, projects, sentenceFor, shotAt, skillLit } from "../works.js";
 
 const props = defineProps({
   localeId: { type: String, required: true },
+  backLabel: { type: String, default: "" },
 });
 
 defineEmits(["grove"]);
@@ -13,9 +15,17 @@ defineEmits(["grove"]);
 const hovered = ref("");
 const selected = ref(0);
 const shown = ref(0);
-const turn = ref(null);
 const shotIndex = ref({});
-let turnToken = 0;
+const book = ref(null);
+const plain = ref(typeof window === "undefined" ? true : prefersPlain());
+let flip = null;
+let swipeX = 0;
+let tracking = false;
+let grabX = null;
+
+function prefersPlain() {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+}
 
 const activeId = computed(() => hovered.value || projects[selected.value]?.id || "");
 const page = computed(() => projects[shown.value]);
@@ -36,43 +46,167 @@ function leave() {
   hovered.value = "";
 }
 
-async function openProject(position) {
+function withoutClickGuard(action) {
+  const settings = flip.getSettings();
+  const blocked = settings.disableFlipByClick;
+  settings.disableFlipByClick = false;
+  try {
+    action();
+  } finally {
+    settings.disableFlipByClick = blocked;
+  }
+}
+
+function openProject(position) {
+  if (!Number.isInteger(position) || position < 0 || position >= projects.length) return;
   hovered.value = "";
-  if (turn.value && turn.value.to !== position) {
-    shown.value = turn.value.to;
-    turn.value = null;
-    await nextTick();
-  } else if (turn.value) {
-    return;
-  }
-  if (position === shown.value) {
-    selected.value = position;
-    return;
-  }
   selected.value = position;
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduce) {
+  if (plain.value || !flip || flip.getCurrentPageIndex() === position) {
     shown.value = position;
     return;
   }
-  turnToken += 1;
-  turn.value = {
-    token: turnToken,
-    face: position,
-    to: position,
-  };
+  withoutClickGuard(() => flip.flip(position, "bottom"));
 }
 
-function finishTurn(event) {
-  if (!turn.value || event.target !== event.currentTarget) return;
-  shown.value = turn.value.to;
-  turn.value = null;
+function fitBook() {
+  if (!flip || !book.value) return;
+  const width = book.value.offsetWidth;
+  const height = book.value.offsetHeight;
+  if (width < 40 || height < 40) return;
+  const settings = flip.getSettings();
+  settings.width = width;
+  settings.height = height;
+  settings.maxWidth = Math.max(settings.maxWidth, width);
+  settings.maxHeight = Math.max(settings.maxHeight, height);
+  settings.minWidth = Math.max(120, Math.ceil(width / 2) + 8);
+  flip.update();
+}
+
+function mountBook() {
+  if (plain.value || flip || !book.value) return;
+  const pages = [...book.value.querySelectorAll(".folio")];
+  if (pages.length === 0 || book.value.offsetWidth < 40) return;
+  flip = new PageFlip(book.value, {
+    width: 460,
+    height: 560,
+    size: "stretch",
+    minWidth: 320,
+    maxWidth: 900,
+    minHeight: 280,
+    maxHeight: 900,
+    usePortrait: true,
+    autoSize: false,
+    showCover: false,
+    drawShadow: true,
+    maxShadowOpacity: 0.35,
+    flippingTime: 800,
+    startPage: shown.value,
+    disableFlipByClick: true,
+    mobileScrollSupport: false,
+    clickEventForward: true,
+    showPageCorners: true,
+  });
+  flip.loadFromHTML(pages);
+  flip.on("flip", (event) => {
+    const index = event.data;
+    if (!Number.isInteger(index)) return;
+    selected.value = index;
+    shown.value = index;
+  });
+  fitBook();
+  bindDrag();
+}
+
+function rememberGrab(event) {
+  const point = event.changedTouches ? event.changedTouches[0] : event;
+  grabX = point ? point.clientX : null;
+}
+
+function finishDrag(event) {
+  if (grabX == null || !flip?.flipController) {
+    grabX = null;
+    return;
+  }
+  const point = event.changedTouches ? event.changedTouches[0] : event;
+  const dx = (point?.clientX ?? grabX) - grabX;
+  grabX = null;
+  const wantNext = dx <= -36;
+  const wantPrev = dx >= 36;
+  if (!wantNext && !wantPrev) return;
+  const index = flip.getCurrentPageIndex();
+  if (wantNext && index >= flip.getPageCount() - 1) return;
+  if (wantPrev && index <= 0) return;
+  event.stopImmediatePropagation();
+  withoutClickGuard(() => (wantNext ? flip.flipNext("bottom") : flip.flipPrev("bottom")));
+}
+
+function bindDrag() {
+  book.value?.addEventListener("mousedown", rememberGrab);
+  book.value?.addEventListener("touchstart", rememberGrab, { passive: true });
+  window.addEventListener("mouseup", finishDrag, true);
+  window.addEventListener("touchend", finishDrag, true);
+  window.addEventListener("resize", fitBook);
+}
+
+function unbindDrag() {
+  book.value?.removeEventListener("mousedown", rememberGrab);
+  book.value?.removeEventListener("touchstart", rememberGrab);
+  window.removeEventListener("mouseup", finishDrag, true);
+  window.removeEventListener("touchend", finishDrag, true);
+  window.removeEventListener("resize", fitBook);
+  grabX = null;
+}
+
+function swipeStart(event) {
+  if (event.target.closest("button, a, select")) return;
+  tracking = true;
+  swipeX = event.clientX;
+  event.currentTarget.setPointerCapture?.(event.pointerId);
+}
+
+function swipeEnd(event) {
+  if (!tracking) return;
+  tracking = false;
+  const delta = event.clientX - swipeX;
+  if (Math.abs(delta) < 48) return;
+  openProject(shown.value + (delta < 0 ? 1 : -1));
 }
 
 function stepShot(project, delta) {
   const current = shotIndex.value[project.id] ?? 0;
   shotIndex.value = { ...shotIndex.value, [project.id]: current + delta };
 }
+
+onMounted(async () => {
+  plain.value = prefersPlain();
+  if (plain.value) return;
+  await nextTick();
+  try {
+    mountBook();
+  } catch {
+    flip = null;
+    plain.value = true;
+  }
+});
+
+watch(() => props.localeId, (localeId) => {
+  const root = book.value;
+  if (!root) return;
+  for (const project of projects) {
+    const paragraph = root.querySelector(`[data-id="${project.id}"] p`);
+    if (paragraph) paragraph.textContent = sentenceFor(project, localeId);
+  }
+});
+
+onBeforeUnmount(() => {
+  unbindDrag();
+  try {
+    flip?.destroy();
+  } catch {
+    /* la librairie retire son bloc */
+  }
+  flip = null;
+});
 
 </script>
 
@@ -81,7 +215,7 @@ function stepShot(project, delta) {
     <GroveScene class="bench-ground" />
     <header class="bench-bar">
       <button type="button" class="back" @click="$emit('grove')">
-        {{ t("grove") }}
+        {{ backLabel || t("grove") }}
       </button>
       <p class="who">{{ t("title") }}</p>
       <slot name="languages" />
@@ -118,10 +252,29 @@ function stepShot(project, delta) {
                 <circle cx="58" cy="58" r="3.2" fill="#f2d56b"/>
                 <circle cx="22" cy="118" r="2.6" fill="#f2d56b"/>
               </svg>
-              <article class="sheet">
+              <div v-if="!plain" ref="book" v-once class="book">
+                <article v-for="project in projects" :key="project.id" class="sheet folio" :data-id="project.id">
+                  <h2>{{ project.name }}</h2>
+                  <figure>
+                    <img :src="shotAt(project, shotIndex[project.id] ?? 0)" :alt="project.name" draggable="false" />
+                    <div v-if="project.shots.length > 1" class="shot-nav">
+                      <button type="button" @click.stop="stepShot(project, -1)">‹</button>
+                      <button type="button" @click.stop="stepShot(project, 1)">›</button>
+                    </div>
+                  </figure>
+                  <p>{{ sentenceFor(project, localeId) }}</p>
+                </article>
+              </div>
+              <article
+                v-if="plain"
+                class="sheet"
+                @pointerdown="swipeStart"
+                @pointerup="swipeEnd"
+                @pointercancel="swipeEnd"
+              >
                 <h2>{{ page.name }}</h2>
                 <figure>
-                  <img :src="shotAt(page, shotIndex[page.id] ?? 0)" :alt="page.name" />
+                  <img :src="shotAt(page, shotIndex[page.id] ?? 0)" :alt="page.name" draggable="false" />
                   <div v-if="page.shots.length > 1" class="shot-nav">
                     <button type="button" @click.stop="stepShot(page, -1)">‹</button>
                     <button type="button" @click.stop="stepShot(page, 1)">›</button>
@@ -129,24 +282,6 @@ function stepShot(project, delta) {
                 </figure>
                 <p>{{ sentenceFor(page, localeId) }}</p>
               </article>
-              <div
-                v-if="turn"
-                :key="turn.token"
-                class="curl"
-                aria-hidden="true"
-                @animationend="finishTurn"
-              >
-                <article class="sheet">
-                  <h2>{{ projects[turn.face].name }}</h2>
-                  <figure>
-                    <img
-                      :src="shotAt(projects[turn.face], shotIndex[projects[turn.face].id] ?? 0)"
-                      alt=""
-                    />
-                  </figure>
-                  <p>{{ sentenceFor(projects[turn.face], localeId) }}</p>
-                </article>
-              </div>
             </div>
             <nav class="index" :aria-label="t('travaux')">
               <button
@@ -165,6 +300,14 @@ function stepShot(project, delta) {
                 {{ project.name }}
               </button>
             </nav>
+            <label class="picker">
+              {{ t("travaux") }}
+              <select :value="selected" @change="openProject(Number($event.target.value))">
+                <option v-for="(project, position) in projects" :key="project.id" :value="position">
+                  {{ project.name }}
+                </option>
+              </select>
+            </label>
           </div>
         </div>
     </div>
@@ -175,7 +318,7 @@ function stepShot(project, delta) {
 .bench {
   position: relative;
   width: 100%;
-  min-height: 100dvh;
+  min-height: 100%;
   color: #1a1208;
 }
 
@@ -237,7 +380,7 @@ function stepShot(project, delta) {
   flex-direction: column;
   align-items: center;
   gap: 0.6rem;
-  padding: 0 1rem 1.5rem;
+  padding: 0 1rem 1.4rem;
 }
 
 .hud {
@@ -312,7 +455,7 @@ function stepShot(project, delta) {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 1.25fr 0.85fr;
+  grid-template-columns: 0.78fr 1.22fr;
   min-height: 24rem;
   background: #f4ecda;
   box-shadow: 0 0 0 3px #3a2414;
@@ -333,9 +476,16 @@ function stepShot(project, delta) {
 
 .leaf {
   position: relative;
-  min-height: 22rem;
-  perspective: 1600px;
+  min-height: 24rem;
   background: #f3ead6;
+}
+
+.book {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #f3ead6;
+  touch-action: none;
 }
 
 .sprig {
@@ -362,32 +512,8 @@ function stepShot(project, delta) {
   padding: 0.85rem 1rem 1rem 34%;
   background: #f3ead6;
   color: #1a1208;
-}
-
-.curl {
-  position: absolute;
-  z-index: 4;
-  inset: 0;
-  transform-origin: right center;
-  transform: rotateY(-158deg);
-  background: #f4ecda;
-  pointer-events: none;
-  backface-visibility: hidden;
-  animation: settle 1.15s cubic-bezier(0.16, 0.7, 0.2, 1) forwards;
-}
-
-@keyframes settle {
-  0% {
-    transform: rotateY(-158deg);
-  }
-  62% {
-    transform: rotateY(-28deg);
-    box-shadow: -18px 12px 22px rgb(28 16 8 / 28%);
-  }
-  100% {
-    transform: rotateY(0deg);
-    box-shadow: -2px 0 0 #d9c7a2;
-  }
+  user-select: none;
+  touch-action: none;
 }
 
 .sheet h2,
@@ -412,6 +538,7 @@ function stepShot(project, delta) {
   max-height: 11rem;
   object-fit: cover;
   background: #1a1208;
+  -webkit-user-drag: none;
 }
 
 .sheet p {
@@ -422,7 +549,12 @@ function stepShot(project, delta) {
   line-height: 1.3;
 }
 
+.picker {
+  display: none;
+}
+
 .index {
+  order: -1;
   display: flex;
   flex-direction: column;
   padding: 0.45rem;
@@ -472,7 +604,50 @@ function stepShot(project, delta) {
   outline-offset: 2px;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 800px) {
+  .atelier {
+    padding-top: 0.9rem;
+  }
+
+  .manual {
+    box-sizing: border-box;
+    width: min(46rem, 100%);
+    padding: 10px 10px 20px;
+  }
+
+  .spread {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .picker {
+    order: -2;
+    display: grid;
+    gap: 0.35rem;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.55rem 0.6rem;
+    background: #f4ecda;
+    color: #1a1208;
+    border-bottom: 2px solid #d9c7a4;
+    font-family: "Josefin Slab", serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .picker select {
+    min-width: 0;
+    min-height: 2.8rem;
+    padding: 0.35rem 0.6rem;
+    border: 3px solid #3a2414;
+    background: #fbf6ea;
+    color: #1a1208;
+    font: inherit;
+  }
+
+  .index {
+    display: none;
+  }
+
   .hud {
     grid-template-columns: repeat(5, 3.15rem);
   }
@@ -482,21 +657,28 @@ function stepShot(project, delta) {
     height: 2rem;
   }
 
-  .spread {
-    grid-template-columns: 1fr;
+  .spread::before {
+    content: none;
   }
 
   .leaf {
-    min-height: 18rem;
+    min-height: clamp(25.5rem, 18rem + 30vw, 36rem);
   }
 
   .sprig {
-    width: 28%;
-    height: 42%;
+    display: none;
   }
 
   .sheet {
-    padding-left: 30%;
+    padding: 1.15rem 1.4rem 1.45rem;
+  }
+
+  .sheet p {
+    max-width: 40rem;
+  }
+
+  .sheet img {
+    max-height: 16rem;
   }
 
   .entry {
@@ -506,8 +688,7 @@ function stepShot(project, delta) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slot,
-  .curl {
+  .slot {
     transform: none;
     animation: none;
   }

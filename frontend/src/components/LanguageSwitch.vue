@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { computed, onBeforeUnmount, ref } from "vue";
+
+const props = defineProps({
   locales: { type: Array, required: true },
   currentId: { type: String, required: true },
   label: { type: String, required: true },
@@ -7,14 +9,75 @@ defineProps({
 });
 
 const emit = defineEmits(["choose"]);
+const root = ref(null);
+const open = ref(false);
+let hideTimer = 0;
+
+const current = computed(
+  () => props.locales.find((locale) => locale.id === props.currentId) ?? props.locales[0],
+);
+const others = computed(() => props.locales.filter((locale) => locale.id !== current.value?.id));
 
 function onChoose(id) {
+  open.value = false;
   emit("choose", id);
 }
+
+function show() {
+  window.clearTimeout(hideTimer);
+  open.value = true;
+}
+
+function hideSoon() {
+  window.clearTimeout(hideTimer);
+  hideTimer = window.setTimeout(() => {
+    open.value = false;
+  }, 900);
+}
+
+function toggle() {
+  window.clearTimeout(hideTimer);
+  open.value = !open.value;
+}
+
+function onDoc(event) {
+  if (!open.value || root.value?.contains(event.target)) return;
+  open.value = false;
+}
+
+window.addEventListener("pointerdown", onDoc);
+onBeforeUnmount(() => {
+  window.clearTimeout(hideTimer);
+  window.removeEventListener("pointerdown", onDoc);
+});
 </script>
 
 <template>
-  <nav class="languages" :class="variant" :aria-label="label">
+  <nav
+    v-if="variant === 'bar'"
+    ref="root"
+    class="languages bar"
+    :aria-label="label"
+    @mouseenter="show"
+    @mouseleave="hideSoon"
+    @focusin="show"
+    @focusout="hideSoon"
+  >
+    <button type="button" :aria-expanded="open" aria-pressed="true" @click="toggle">
+      {{ current?.label }}
+    </button>
+    <div v-if="open" class="lang-more">
+      <button
+        v-for="locale in others"
+        :key="locale.id"
+        type="button"
+        @click="onChoose(locale.id)"
+      >
+        {{ locale.label }}
+      </button>
+    </div>
+  </nav>
+  <nav v-else class="languages" :class="variant" :aria-label="label">
     <button
       v-for="locale in locales"
       :key="locale.id"
@@ -114,6 +177,30 @@ function onChoose(id) {
   color: #f4ffe8;
   border-color: #8fd18a;
   background: #143528;
+}
+
+.languages.bar {
+  position: relative;
+}
+
+.lang-more {
+  position: absolute;
+  z-index: 6;
+  top: calc(100% + 6px);
+  right: -3px;
+  left: -3px;
+  display: grid;
+  gap: 4px;
+  padding: 4px;
+  background: #0b1c14;
+  border: 3px solid #163628;
+  outline: 2px solid #8fd18a;
+  outline-offset: -5px;
+}
+
+.languages.bar .lang-more button {
+  width: 100%;
+  min-width: 0;
 }
 
 .languages.menu {
