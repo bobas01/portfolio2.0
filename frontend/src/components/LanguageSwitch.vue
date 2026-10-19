@@ -187,7 +187,8 @@ onBeforeUnmount(() => {
   position: absolute;
   z-index: 6;
   top: calc(100% + 6px);
-  right: 0;
+  right: -3px;
+  left: -3px;
   display: grid;
   gap: 4px;
   padding: 4px;
@@ -197,8 +198,9 @@ onBeforeUnmount(() => {
   outline-offset: -5px;
 }
 
-.lang-more button {
-  min-width: 4.5rem;
+.languages.bar .lang-more button {
+  width: 100%;
+  min-width: 0;
 }
 
 .languages.menu {
