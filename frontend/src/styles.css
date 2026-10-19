@@ -140,7 +140,7 @@ body {
 .arrival {
   position: absolute;
   z-index: 2;
-  inset: 0;
+  inset: calc((100cqh - 100dvh) / 2) calc((100cqw - 100vw) / 2);
   display: grid;
   place-items: center;
   padding: 4.5rem 1rem 1rem;
@@ -173,7 +173,7 @@ body {
 .top-bar {
   position: absolute;
   z-index: 3;
-  top: 0.85rem;
+  top: calc((100cqh - 100dvh) / 2 + 0.85rem);
   left: 0;
   right: 0;
   display: flex;
