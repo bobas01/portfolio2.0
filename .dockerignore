@@ -1,0 +1,10 @@
+.git
+.cursor
+.impeccable
+.code-review-graph
+**/node_modules
+frontend/dist
+frontend/test-results
+frontend/scripts
+frontend/cv
+docs
