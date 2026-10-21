@@ -8,14 +8,15 @@ import { benchSkills, projects, sentenceFor, shotAt, skillLit } from "../works.j
 const props = defineProps({
   localeId: { type: String, required: true },
   backLabel: { type: String, default: "" },
+  start: { type: Number, default: 0 },
 });
 
-defineEmits(["grove"]);
+const emit = defineEmits(["grove", "open"]);
 
+const opening = Number.isInteger(props.start) && props.start >= 0 && props.start < projects.length ? props.start : 0;
 const hovered = ref("");
-const selected = ref(0);
-const shown = ref(0);
-const shotIndex = ref({});
+const selected = ref(opening);
+const shown = ref(opening);
 const book = ref(null);
 const plain = ref(typeof window === "undefined" ? true : prefersPlain());
 let flip = null;
@@ -172,11 +173,6 @@ function swipeEnd(event) {
   openProject(shown.value + (delta < 0 ? 1 : -1));
 }
 
-function stepShot(project, delta) {
-  const current = shotIndex.value[project.id] ?? 0;
-  shotIndex.value = { ...shotIndex.value, [project.id]: current + delta };
-}
-
 onMounted(async () => {
   plain.value = prefersPlain();
   if (plain.value) return;
@@ -195,6 +191,8 @@ watch(() => props.localeId, (localeId) => {
   for (const project of projects) {
     const paragraph = root.querySelector(`[data-id="${project.id}"] p`);
     if (paragraph) paragraph.textContent = sentenceFor(project, localeId);
+    const more = root.querySelector(`[data-id="${project.id}"] .more`);
+    if (more) more.textContent = textFor(localeId, "seeProject");
   }
 });
 
@@ -238,31 +236,14 @@ onBeforeUnmount(() => {
         <div class="manual">
           <div class="spread">
             <div class="leaf">
-              <svg class="sprig" viewBox="0 0 120 240" aria-hidden="true">
-                <path d="M36 2c4 36-8 58 2 96 10 36-6 58 4 92 6 22 0 32 6 46" fill="none" stroke="#2f6b40" stroke-width="2.4" stroke-linecap="round"/>
-                <path d="M36 28c22-18 42-8 38 8-16 4-28 8-38 18 4-10 4-18 0-26z" fill="#3f8f52"/>
-                <path d="M34 36c-20-8-36 2-34 16 14 2 24 8 34 16-2-12-2-22 0-32z" fill="#24683a"/>
-                <path d="M40 78c24-16 44-4 40 12-18 2-30 8-40 18 2-12 2-20 0-30z" fill="#57a364"/>
-                <path d="M36 92c-22-10-40 0-38 16 16 2 28 8 38 18 0-12 0-22 0-34z" fill="#1f5c34"/>
-                <path d="M42 132c20-14 38-2 34 12-14 2-24 8-34 16 2-10 2-18 0-28z" fill="#3f8f52"/>
-                <path d="M34 146c-18-8-32 2-30 14 12 2 22 6 30 14 0-10 0-18 0-28z" fill="#2d7a44"/>
-                <path d="M44 186c16-12 30-2 26 10-12 2-20 6-26 14 0-8 0-16 0-24z" fill="#67b072"/>
-                <path d="M40 214c-16-6-28 2-26 12 10 2 18 6 26 12 0-8 0-16 0-24z" fill="#2d7a44"/>
-                <path d="M46 228c14-8 26 0 22 10-10 2-16 4-22 10 0-8 0-14 0-20z" fill="#3f8f52"/>
-                <circle cx="58" cy="58" r="3.2" fill="#f2d56b"/>
-                <circle cx="22" cy="118" r="2.6" fill="#f2d56b"/>
-              </svg>
               <div v-if="!plain" ref="book" v-once class="book">
                 <article v-for="project in projects" :key="project.id" class="sheet folio" :data-id="project.id">
                   <h2>{{ project.name }}</h2>
                   <figure>
-                    <img :src="shotAt(project, shotIndex[project.id] ?? 0)" :alt="project.name" draggable="false" />
-                    <div v-if="project.shots.length > 1" class="shot-nav">
-                      <button type="button" @click.stop="stepShot(project, -1)">‹</button>
-                      <button type="button" @click.stop="stepShot(project, 1)">›</button>
-                    </div>
+                    <img :src="shotAt(project, 0)" :alt="project.name" draggable="false" />
                   </figure>
                   <p>{{ sentenceFor(project, localeId) }}</p>
+                  <button type="button" class="more" @click.stop="emit('open', project.id)">{{ t("seeProject") }}</button>
                 </article>
               </div>
               <article
@@ -274,13 +255,10 @@ onBeforeUnmount(() => {
               >
                 <h2>{{ page.name }}</h2>
                 <figure>
-                  <img :src="shotAt(page, shotIndex[page.id] ?? 0)" :alt="page.name" draggable="false" />
-                  <div v-if="page.shots.length > 1" class="shot-nav">
-                    <button type="button" @click.stop="stepShot(page, -1)">‹</button>
-                    <button type="button" @click.stop="stepShot(page, 1)">›</button>
-                  </div>
+                  <img :src="shotAt(page, 0)" :alt="page.name" draggable="false" />
                 </figure>
                 <p>{{ sentenceFor(page, localeId) }}</p>
+                <button type="button" class="more" @click.stop="emit('open', page.id)">{{ t("seeProject") }}</button>
               </article>
             </div>
             <nav class="index" :aria-label="t('travaux')">
@@ -299,6 +277,20 @@ onBeforeUnmount(() => {
               >
                 {{ project.name }}
               </button>
+              <svg class="sprig" viewBox="0 0 120 240" aria-hidden="true">
+                <path d="M36 2c4 36-8 58 2 96 10 36-6 58 4 92 6 22 0 32 6 46" fill="none" stroke="#2f6b40" stroke-width="2.4" stroke-linecap="round"/>
+                <path d="M36 28c22-18 42-8 38 8-16 4-28 8-38 18 4-10 4-18 0-26z" fill="#3f8f52"/>
+                <path d="M34 36c-20-8-36 2-34 16 14 2 24 8 34 16-2-12-2-22 0-32z" fill="#24683a"/>
+                <path d="M40 78c24-16 44-4 40 12-18 2-30 8-40 18 2-12 2-20 0-30z" fill="#57a364"/>
+                <path d="M36 92c-22-10-40 0-38 16 16 2 28 8 38 18 0-12 0-22 0-34z" fill="#1f5c34"/>
+                <path d="M42 132c20-14 38-2 34 12-14 2-24 8-34 16 2-10 2-18 0-28z" fill="#3f8f52"/>
+                <path d="M34 146c-18-8-32 2-30 14 12 2 22 6 30 14 0-10 0-18 0-28z" fill="#2d7a44"/>
+                <path d="M44 186c16-12 30-2 26 10-12 2-20 6-26 14 0-8 0-16 0-24z" fill="#67b072"/>
+                <path d="M40 214c-16-6-28 2-26 12 10 2 18 6 26 12 0-8 0-16 0-24z" fill="#2d7a44"/>
+                <path d="M46 228c14-8 26 0 22 10-10 2-16 4-22 10 0-8 0-14 0-20z" fill="#3f8f52"/>
+                <circle cx="58" cy="58" r="3.2" fill="#f2d56b"/>
+                <circle cx="22" cy="118" r="2.6" fill="#f2d56b"/>
+              </svg>
             </nav>
             <label class="picker">
               {{ t("travaux") }}
@@ -431,7 +423,7 @@ onBeforeUnmount(() => {
 
 .manual {
   position: relative;
-  width: min(46rem, 92vw);
+  width: min(62rem, 94vw);
   padding: 12px 16px 22px;
   background: #5a321c;
 }
@@ -455,8 +447,8 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 0.78fr 1.22fr;
-  min-height: 24rem;
+  grid-template-columns: minmax(9.5rem, 0.42fr) 1.58fr;
+  min-height: 32rem;
   background: #f4ecda;
   box-shadow: 0 0 0 3px #3a2414;
 }
@@ -467,7 +459,7 @@ onBeforeUnmount(() => {
   z-index: 6;
   top: 0;
   bottom: 0;
-  left: 59.5%;
+  left: max(9.5rem, 21%);
   width: 14px;
   transform: translateX(-50%);
   background: linear-gradient(90deg, transparent, rgb(74 48 24 / 22%), transparent);
@@ -476,7 +468,7 @@ onBeforeUnmount(() => {
 
 .leaf {
   position: relative;
-  min-height: 24rem;
+  min-height: 32rem;
   background: #f3ead6;
 }
 
@@ -489,12 +481,11 @@ onBeforeUnmount(() => {
 }
 
 .sprig {
-  position: absolute;
-  z-index: 2;
-  top: 0;
-  left: 0;
-  width: 33%;
-  height: 66%;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  max-height: 15rem;
+  margin-top: 0.6rem;
   pointer-events: none;
 }
 
@@ -509,7 +500,7 @@ onBeforeUnmount(() => {
 .sheet {
   box-sizing: border-box;
   min-height: 100%;
-  padding: 0.85rem 1rem 1rem 34%;
+  padding: 1rem 1.4rem 1.2rem;
   background: #f3ead6;
   color: #1a1208;
   user-select: none;
@@ -535,15 +526,16 @@ onBeforeUnmount(() => {
 .sheet img {
   display: block;
   width: 100%;
-  max-height: 11rem;
+  height: 18rem;
   object-fit: cover;
+  object-position: top;
   background: #1a1208;
   -webkit-user-drag: none;
 }
 
 .sheet p {
-  margin: 0.55rem 0 0;
-  max-width: 42ch;
+  margin: 0.7rem 0 0;
+  max-width: 62ch;
   font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.3;
@@ -561,45 +553,55 @@ onBeforeUnmount(() => {
 }
 
 .entry {
-  flex: 1;
+  flex: 0 0 auto;
   border: 0;
-  border-bottom: 1px solid #e0d3b8;
+  border-left: 3px solid transparent;
   background: transparent;
-  color: #1a1208;
+  color: rgb(26 18 8 / 72%);
   font-family: "Josefin Slab", serif;
-  font-size: 1.35rem;
+  font-size: 1.02rem;
   font-weight: 700;
   text-align: left;
-  padding: 0.2rem 0.7rem;
+  padding: 0.32rem 0.55rem;
   cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.entry:hover {
+  color: #1a1208;
+  background: rgb(143 209 138 / 16%);
 }
 
 .entry.is-open {
-  background: #e5f0df;
+  border-left-color: #2f6b40;
+  background: rgb(143 209 138 / 24%);
   color: #145c28;
 }
 
-.shot-nav {
-  display: flex;
-  gap: 0.25rem;
-  margin-top: 0.3rem;
-}
-
-.shot-nav button {
-  min-width: 2rem;
-  min-height: 2rem;
-  border: 0;
-  background: #b5e2f7;
-  color: #0a371a;
+.more {
+  margin-top: 0.7rem;
+  min-height: 2.5rem;
+  padding: 0.3rem 0.9rem;
+  border: 3px solid #163628;
+  outline: 2px solid #8fd18a;
+  outline-offset: -5px;
+  background: #0b1c14;
+  color: #d7f0c4;
+  box-shadow: 0 3px 0 #06140c;
   font-family: "Josefin Slab", serif;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 700;
   cursor: pointer;
+}
+
+.more:hover {
+  color: #f4ffe8;
+  border-color: #8fd18a;
 }
 
 .back:focus-visible,
 .entry:focus-visible,
-.shot-nav button:focus-visible {
+.more:focus-visible {
   outline: 3px solid #0a371a;
   outline-offset: 2px;
 }
@@ -611,7 +613,7 @@ onBeforeUnmount(() => {
 
   .manual {
     box-sizing: border-box;
-    width: min(46rem, 100%);
+    width: 100%;
     padding: 10px 10px 20px;
   }
 
@@ -678,6 +680,8 @@ onBeforeUnmount(() => {
   }
 
   .sheet img {
+    height: auto;
+    aspect-ratio: 16 / 10;
     max-height: 16rem;
   }
 

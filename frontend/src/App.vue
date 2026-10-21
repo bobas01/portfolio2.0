@@ -1,17 +1,24 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import GroveScene from "./components/GroveScene.vue";
 import Intro from "./components/Intro.vue";
 import LanguageSwitch from "./components/LanguageSwitch.vue";
+import ProjectPage from "./components/ProjectPage.vue";
 import Workbench from "./components/Workbench.vue";
 import { contact, cvByLocale, letterHref, textFor } from "./copy.js";
 import { sectionIds } from "./menu.js";
 import { useLocale } from "./useLocale.js";
-import { skillCategories, skillsIn } from "./works.js";
+import { findProject, projectIdFromPath, projectPath, projects, skillCategories, skillsIn } from "./works.js";
 
 const { locales, localeId, title, lead, languagesLabel, chooseLocale } = useLocale();
 const view = ref("grove");
+const projectId = ref("");
 const letter = ref({ name: "", email: "", message: "" });
+const shell = ref(null);
+
+const project = computed(() => findProject(projectId.value));
+const benchStart = computed(() => Math.max(0, projects.findIndex((item) => item.id === projectId.value)));
+const scrolls = computed(() => view.value === "bench" || view.value === "project");
 
 const groupKey = { dev: "groupDev", tools: "groupTools", cloud: "groupCloud" };
 
@@ -33,10 +40,54 @@ function onPageBackdrop(event) {
   backToGrove();
 }
 
+function showProject(id) {
+  projectId.value = id;
+  view.value = "project";
+  document.title = `${findProject(id).name} · ${title.value}`;
+  shell.value?.scrollTo?.(0, 0);
+}
+
+function openProjectPage(id) {
+  if (!findProject(id)) return;
+  if (view.value === "project") {
+    history.replaceState({ view: "project", fromApp: history.state?.fromApp === true }, "", projectPath(id));
+  } else {
+    history.replaceState({ view: view.value }, "");
+    history.pushState({ view: "project", fromApp: true }, "", projectPath(id));
+  }
+  showProject(id);
+}
+
+function restoreTitle() {
+  document.title = title.value;
+}
+
+function leaveProject() {
+  if (history.state?.fromApp === true) {
+    history.back();
+    return;
+  }
+  history.replaceState({ view: "bench" }, "", "/");
+  view.value = "bench";
+  restoreTitle();
+}
+
+function onPopState() {
+  const id = projectIdFromPath(window.location.pathname);
+  if (id) {
+    showProject(id);
+    return;
+  }
+  const previous = history.state?.view;
+  view.value = previous === "bench" || sectionIds.includes(previous) ? previous : "grove";
+  restoreTitle();
+}
+
 function onKey(event) {
   if (event.key !== "Escape" || view.value === "grove") return;
   if (event.target.closest?.(".languages")) return;
-  backToGrove();
+  if (view.value === "project") leaveProject();
+  else backToGrove();
 }
 
 function sendLetter() {
@@ -45,12 +96,26 @@ function sendLetter() {
   window.location.href = href;
 }
 
-onMounted(() => window.addEventListener("keydown", onKey));
-onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
+onMounted(() => {
+  window.addEventListener("keydown", onKey);
+  window.addEventListener("popstate", onPopState);
+  const id = projectIdFromPath(window.location.pathname);
+  if (id) showProject(id);
+  else if (window.location.pathname !== "/") history.replaceState(null, "", "/");
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", onKey);
+  window.removeEventListener("popstate", onPopState);
+});
+
+watch(localeId, () => {
+  if (view.value === "project" && project.value) document.title = `${project.value.name} · ${title.value}`;
+});
 </script>
 
 <template>
-  <main class="clairiere" :class="{ 'is-bench': view === 'bench' }">
+  <main ref="shell" class="clairiere" :class="{ 'is-bench': scrolls }">
     <div v-if="view === 'grove'" class="stage">
       <GroveScene>
         <div class="top-bar">
@@ -113,7 +178,13 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
       </GroveScene>
     </div>
 
-    <Workbench v-else-if="view === 'bench'" :locale-id="localeId" @grove="backToGrove">
+    <Workbench
+      v-else-if="view === 'bench'"
+      :locale-id="localeId"
+      :start="benchStart"
+      @grove="backToGrove"
+      @open="openProjectPage"
+    >
       <template #languages>
         <LanguageSwitch
           variant="bar"
@@ -124,6 +195,24 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
         />
       </template>
     </Workbench>
+
+    <ProjectPage
+      v-else-if="view === 'project' && project"
+      :project="project"
+      :locale-id="localeId"
+      @back="leaveProject"
+      @open="openProjectPage"
+    >
+      <template #languages>
+        <LanguageSwitch
+          variant="bar"
+          :locales="locales"
+          :current-id="localeId"
+          :label="languagesLabel"
+          @choose="chooseLocale"
+        />
+      </template>
+    </ProjectPage>
 
     <div v-else class="stage" @pointerdown="onPageBackdrop">
       <GroveScene>
